@@ -11,9 +11,10 @@ echo ==========================================================================
 echo Ensuring we have needed Python packages:
 echo   python_speech_features - Mel-Frequency Cepstral Coefficients library.
 echo     https://github.com/jameslyons/python_speech_features
+echo   pylint - Linter for Python, useful in Visual Studio Code.
 echo ==========================================================================
 echo.
-call pip3 install python_speech_features
+call pip3 install python_speech_features pylint
 if ERRORLEVEL 1 echo ERROR: pip3 install failed with errorlevel %ERRORLEVEL% && exit /b 1
 
 echo.
