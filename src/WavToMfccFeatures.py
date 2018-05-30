@@ -25,10 +25,10 @@ if len(sys.argv) < 2:
 mfccFeatures = mfcc(samples, rateHz, appendEnergy=True)
 
 # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
-# before and after the current row whose samples are averaged to get the delta.
+# before and after the current row whose samples are averaged to get the delta. 13 columns.
 mfccDeltas = delta(mfccFeatures, 2)
 
-# Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas.
+# Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas. 13 columns
 mfccDeltaDeltas = delta(mfccDeltas, 2)
 
 # Calculate log-MFCC-filterbank features from the original samples.
@@ -36,18 +36,15 @@ mfccDeltaDeltas = delta(mfccDeltas, 2)
 # 512-sample FFT calculation size, 0 Hz low frequency, rateHz/2 high frequency,
 # 0.97 pre-emphasis filter, 22 lifter on final cepstral coefficients.
 # We get back a NumPy array of 26 log(filterbank) entries. We keep the first 12 per the
-# tutorial recommendation.
+# tutorial recommendation (later banks measure fast-changing harmonics in the high frequencies).
 logFbankFeatures = logfbank(samples, rateHz)
 logFbankFeatures = logFbankFeatures[:,1:13]
 
 fullArray = numpy.concatenate([mfccFeatures, mfccDeltas, mfccDeltaDeltas, logFbankFeatures], axis=1)
 
-print('offsetSec,logEnergy,mfcc1,mfcc2,mfcc3,mfcc4,mfcc5,mfcc6,mfcc7,mfcc8,mfcc9,mfcc10,mfcc11,mfcc12,' +
-  'dLogEnergy,mfccd1,mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,' +
-  'logFbank0,logFbank1,logFbank2,logFbank3,logFbank4,logFbank5,logFbank6,logFbank7,logFbank8,logFbank9,logFbank10,logFbank11,logFbank12')
-print(mfccFeatures[1:3,:])
-print(mfccDeltas[1:3,:])
-print(mfccDeltaDeltas[1:3,:])
-print(logFbankFeatures[1:3,:])
+header = 'logEnergy,mfcc1,mfcc2,mfcc3,mfcc4,mfcc5,mfcc6,mfcc7,mfcc8,mfcc9,mfcc10,mfcc11,mfcc12,' + \
+  'dLogEnergy,mfccd1,mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,' + \
+  'd2LogEnergy,mfcc2d1,mfcc2d2,mfcc2d3,mfcc2d4,mfcc2d5,mfcc2d6,mfcc2d7,mfcc2d8,mfcc2d9,mfcc2d10,mfcc2d11,mfcc2d12,' + \
+  'logFbank0,logFbank1,logFbank2,logFbank3,logFbank4,logFbank5,logFbank6,logFbank7,logFbank8,logFbank9,logFbank10,logFbank11'
 
-print(fullArray[1:10,:])
+numpy.savetxt(sys.stdout, fullArray, delimiter=',', header=header, comments='')
