@@ -1,12 +1,7 @@
 # WavToMfccFeatures - Converts a wav file into a comma-separated value list
-# of Mel-Frequency Cepstral Coefficients.
+# of Mel-Frequency Cepstral Coefficients to stdout.
 
 from MfccWavLoader import MfccWavLoader
-import numpy
-from python_speech_features import mfcc
-from python_speech_features import delta
-from python_speech_features import logfbank
-import scipy.io.wavfile as wav
 import sys
 
 if len(sys.argv) < 2:
