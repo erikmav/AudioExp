@@ -242,15 +242,23 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         # row information (51 columns) leading to the first convolutional layer.
         Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.numColumns, 1)),
         
+        # TODO: Experiment with: MaxPooling2D((2, 2))
+        # TODO: Experiment with: Dropout(0.25)
+
         # Layer 2: Convolution over results from conv layer 1. This provides an integration over a wider time period,
         # using the features extracted from the first layer.
         Conv2D(numConv2Filters, conv2KernelSize, kernel_initializer='TruncatedNormal', activation='relu'),
+
+        # TODO: Experiment with: MaxPooling2D((2, 2))
+        # TODO: Experiment with: Dropout(0.25)
 
         # Reduce dimensionality before connecting to fully connected layers.
         Flatten(),
 
         # Layer 3: Fully connected layer with ReLU activation.
         Dense(numFullyConnectedPerceptronsLastLayer, activation='relu'),
+
+        # TODO: Experiment with: Dropout(0.5)
 
         # Outputs: SoftMax activation to get probabilities by instrument.
         Dense(numInstruments, activation='softmax')
