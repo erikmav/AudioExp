@@ -231,7 +231,7 @@ numConv1FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4
 # For the first convolutional layer, the size of the kernel that implies the size of the filters.
 # TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
 # wider spans across MFCC ranges or wider spans across time.
-conv1KernelSizeValues = [ 1, 2, 3, 4, 5, 6, 7, (1,2), (2,1), (2,3), (3,2), (4,3), (3,4), (1,3), (3,1), (1, MfccWavLoader.numColumns), (2, MfccWavLoader.numColumns), (3, MfccWavLoader.numColumns) ]
+conv1KernelSizeValues = [ 1, 3, 5, 7, (1,2), (2,1), (2,3), (3,2), (4,3), (3,4), (1,3), (3,1), (1, MfccWavLoader.numColumns), (2, MfccWavLoader.numColumns), (3, MfccWavLoader.numColumns), (4, MfccWavLoader.numColumns) ]
 
 # For the second convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the results of the first conv layer.
