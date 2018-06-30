@@ -3,6 +3,7 @@
 # splits the wav set into training and validation sets, and trains a Keras/TensorFlow
 # machine learning model to recognize the sounds.
 
+from datetime import datetime
 import glob
 import json
 from keras.layers import Activation, Conv2D, Dense, Flatten, MaxPooling2D
@@ -15,6 +16,9 @@ import os
 import numpy
 import random
 import sys
+
+startDateTime = datetime.now()
+print("Start:", startDateTime)
 
 class TaggedSound:
     """Per-sound tag data format stored in the TaggedSoundData.Sounds collection"""
@@ -229,7 +233,7 @@ conv2KernelSizeValues = [ 1, 2, 3, 4, 5 ]
 numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16 ]
 
 
-def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16):
+def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32):
     print("TrainAndValidateModel:")
     print("  numConv1Filters:", numConv1Filters)
     print("  conv1KernelSize:", conv1KernelSize)
@@ -274,7 +278,7 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
 
     # TODO: Experiment with epochs (or move to dynamic epochs by epsilon gain)
     # TODO: Experiment with batch size
-    model.fit(mfccTensors, oneHotLabelsByInstrumentOrdinal, epochs=10, batch_size=batchSize)
+    model.fit(mfccTensors, oneHotLabelsByInstrumentOrdinal, epochs=epochs, batch_size=batchSize)
 
     score = model.evaluate(testMfccTensors, testOneHotLabelsByInstrumentOrdinal, batch_size=batchSize)
     print("Score:", model.metrics_names, score)
@@ -319,3 +323,7 @@ for result in results:
 
 print("Result with min loss:", resultMinLoss)
 print("Result with max accuracy:", resultMaxAccuracy)
+
+endDateTime = datetime.now()
+print("Started:", startDateTime, "; ended:", endDateTime)
+print("Elapsed:", endDateTime - startDateTime)
