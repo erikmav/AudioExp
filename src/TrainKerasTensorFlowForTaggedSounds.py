@@ -1,7 +1,12 @@
 # TrainKerasTensorFlowForTaggedSounds - Loads a set of wav files and their tags,
-# analyzes them  using Mel-Frequency Cepstral Coefficients and related derivatives,
+# analyzes them using Mel-Frequency Cepstral Coefficients and related derivatives,
 # splits the wav set into training and validation sets, and trains a Keras/TensorFlow
 # machine learning model to recognize the sounds.
+#
+# The resulting model can be used to scan a stream of similarly-calculated MFCC
+# rows from a longer or continuous wav stream, performing recognition within
+# each overlapped window of MFCCs, predicting whether each instrument is at the
+# start of that window.
 
 from datetime import datetime
 import glob
@@ -109,24 +114,33 @@ if len(sys.argv) < 2:
 # ---W---
 #   ---W---
 #
-#  |       floor(M / 2) fully connected layer, one per W.
+#  |       conv1 layer of varying kernel shapes and filter counts
 #  V |
 #    V
 # +-+-+-+-+   +-+-+
 # | | | | |   | | |
-# | | | | |...| | |        N rows of meurons
+# | | | | |...| | |        Reduced sets of rows, one version per conv filter
 # | | | | |   | | |
 # +-+-+-+-+   +-+-+
 # ---V---
 #   ---V---
 #
-#   |
+#   |     conv2 layer of varying kernel shapes and filter counts
 #   V
 #
-# +-+-+-+-+   +-+         R rows of neurons
-# | | | | |   | |   ->   Instrument1 classification neuron
-# | | | | |...| |   ->   Instrument2 classification neuron
-# +-+-+-+-+   +-+        ...
+# +-+-+-+-+   +-+         
+# | | | | |   | |
+# | | | | |...| |
+# +-+-+-+-+   +-+
+# ---------------
+#       |
+#       V
+#
+#    ********           Fully connected layer
+#       |
+#       V
+#
+#      ABC              Per-instrument classification neurons (outputs)
 #
 # We vary the following parameters to find the best accuracy.
 # - MFCC computation time intervals: 5ms, 10ms, 20ms, 25ms (matching various of the intervals in papers above)
