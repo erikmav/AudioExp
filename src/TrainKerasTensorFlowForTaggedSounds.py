@@ -10,6 +10,7 @@ from keras.models import Sequential
 import keras.optimizers
 import keras.utils
 from MfccWavLoader import MfccWavLoader
+from StayAwake import preventComputerFromSleeping
 import os
 import numpy
 import random
@@ -282,12 +283,16 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
 
 results = []
 
-for numConv1Filters in numConv1FiltersValues:
-    for conv1KernelSize in conv1KernelSizeValues:
-        for numConv2Filters in numConv2FiltersValues:
-            for conv2KernelSize in conv2KernelSizeValues:
-                for numFullyConnectedPerceptronsLastLayer in numFullyConnectedPerceptronsLastLayerValues:
-                    results.append(TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer))
+preventComputerFromSleeping(True)
+try:
+    for numConv1Filters in numConv1FiltersValues:
+        for conv1KernelSize in conv1KernelSizeValues:
+            for numConv2Filters in numConv2FiltersValues:
+                for conv2KernelSize in conv2KernelSizeValues:
+                    for numFullyConnectedPerceptronsLastLayer in numFullyConnectedPerceptronsLastLayerValues:
+                        results.append(TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer))
+finally:
+    preventComputerFromSleeping(False)
 
 resultMinLoss = None
 minLoss = 100000
