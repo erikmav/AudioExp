@@ -226,25 +226,28 @@ testOneHotLabelsByInstrumentOrdinal = keras.utils.to_categorical(testInstrumentL
 # For the first convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the input MFCCs.
 # TODO: Experiment with this value - hence an array
-numConv1FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4, numInstruments * 8 ]
+numConv1FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32 ]
 
 # For the first convolutional layer, the size of the kernel that implies the size of the filters.
 # TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
 # wider spans across MFCC ranges or wider spans across time.
-conv1KernelSizeValues = [ 1, 3, 5, 7, (3,5), (5,3), (2, MfccWavLoader.numColumns), (3, MfccWavLoader.numColumns), (4, MfccWavLoader.numColumns) ]
+conv1KernelSizeValues = [ 5 ]
+#conv1KernelSizeValues = [ 1, 3, 5, 7, (3,5), (5,3), (2, MfccWavLoader.baseNumColumns), (3, MfccWavLoader.baseNumColumns), (4, MfccWavLoader.baseNumColumns) ]
 
 # For the second convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the results of the first conv layer.
 # TODO: Experiment with this value - hence an array
-numConv2FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4, numInstruments * 8 ]
+numConv2FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32 ]
 
 # For the second convolutional layer, the size of the kernel that implies the size of the filters.
 # TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
 # wider spans across MFCC ranges or wider spans across time.
-conv2KernelSizeValues = [ 1, 3, 5, (3,5), (5,3) ]
+conv2KernelSizeValues = [ 5 ]
+#conv2KernelSizeValues = [ 1, 3, 5, (3,5), (5,3) ]
 
 # TODO: Experiment with this value - hence an array
-numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16 ]
+numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
+#numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16 ]
 
 
 def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32):
@@ -258,7 +261,7 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
     model = Sequential([
         # Layer 1: W rows of MFCC, MFCC derivative, MFCC double derivative, log-filterbank-energy
         # row information (51 columns) leading to the first convolutional layer.
-        Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.numColumns, 1)),
+        Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.baseNumColumns, 1)),
         
         # TODO: Experiment with: MaxPooling2D((2, 2))
         # TODO: Experiment with: Dropout(0.25)

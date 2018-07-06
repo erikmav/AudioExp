@@ -1,0 +1,46 @@
+Analysis summary: No convergence in most cases, horrid best results in set. Something seriously wrong. Priority follow-ups:
+
+1. Normalize all MFCC coefficients besides energy column, per http://www.cs.toronto.edu/%7Efritz/absps/waibelTDNN.pdf "Subtract from each coefficient the average coefficient energy computed over all frames, then normalize each coefficient to lie in [-1, 1]"
+2. Reduce overall data by eliminating filterbank energies.
+3. Experiment with changing from wide rows to a series of layers (similar to RGB layers for video) for derivative and d2
+
+{'loss': 1.2764841318130493, 'acc': 0.4791666666666667, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 5, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 13.767539978027344, 'acc': 0.14583333333333334, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 10, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 2.9032585620880127, 'acc': 0.5416666666666666, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 20, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 0.9551727672417959, 'acc': 0.7916666666666666, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 12.088571707407633, 'acc': 0.25, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 80, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 160, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 1.1095470786094666, 'acc': 0.5416666666666666, 'numConv1Filters': 10, 'conv1KernelSize': 5, 'numConv2Filters': 5, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 10, 'conv1KernelSize': 5, 'numConv2Filters': 10, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 12.088571707407633, 'acc': 0.25, 'numConv1Filters': 10, 'conv1KernelSize': 5, 'numConv2Filters': 20, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 1.703568206479152, 'acc': 0.75, 'numConv1Filters': 10, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 10, 'conv1KernelSize': 5, 'numConv2Filters': 80, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 10, 'conv1KernelSize': 5, 'numConv2Filters': 160, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 20, 'conv1KernelSize': 5, 'numConv2Filters': 5, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 4.806632041931152, 'acc': 0.5833333333333334, 'numConv1Filters': 20, 'conv1KernelSize': 5, 'numConv2Filters': 10, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 20, 'conv1KernelSize': 5, 'numConv2Filters': 20, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 20, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 20, 'conv1KernelSize': 5, 'numConv2Filters': 80, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 20, 'conv1KernelSize': 5, 'numConv2Filters': 160, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 1.2818437019983928, 'acc': 0.4791666666666667, 'numConv1Filters': 40, 'conv1KernelSize': 5, 'numConv2Filters': 5, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 14.103333473205566, 'acc': 0.125, 'numConv1Filters': 40, 'conv1KernelSize': 5, 'numConv2Filters': 10, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 40, 'conv1KernelSize': 5, 'numConv2Filters': 20, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 13.767539978027344, 'acc': 0.14583333333333334, 'numConv1Filters': 40, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 40, 'conv1KernelSize': 5, 'numConv2Filters': 80, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 14.103333473205566, 'acc': 0.125, 'numConv1Filters': 40, 'conv1KernelSize': 5, 'numConv2Filters': 160, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 80, 'conv1KernelSize': 5, 'numConv2Filters': 5, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 80, 'conv1KernelSize': 5, 'numConv2Filters': 10, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 1.2760782639185588, 'acc': 0.4791666666666667, 'numConv1Filters': 80, 'conv1KernelSize': 5, 'numConv2Filters': 20, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 14.103333473205566, 'acc': 0.125, 'numConv1Filters': 80, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 14.103333473205566, 'acc': 0.125, 'numConv1Filters': 80, 'conv1KernelSize': 5, 'numConv2Filters': 80, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 80, 'conv1KernelSize': 5, 'numConv2Filters': 160, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 1.2872050404548645, 'acc': 0.4791666666666667, 'numConv1Filters': 160, 'conv1KernelSize': 5, 'numConv2Filters': 5, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 12.088571707407633, 'acc': 0.25, 'numConv1Filters': 160, 'conv1KernelSize': 5, 'numConv2Filters': 10, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 160, 'conv1KernelSize': 5, 'numConv2Filters': 20, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 8.3948415517807, 'acc': 0.4791666666666667, 'numConv1Filters': 160, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 12.088571707407633, 'acc': 0.25, 'numConv1Filters': 160, 'conv1KernelSize': 5, 'numConv2Filters': 80, 'numFullyConnectedPerceptronsLastLayer': 20}
+{'loss': 14.103333473205566, 'acc': 0.125, 'numConv1Filters': 160, 'conv1KernelSize': 5, 'numConv2Filters': 160, 'numFullyConnectedPerceptronsLastLayer': 20}
+Result with min loss: {'loss': 0.9551727672417959, 'acc': 0.7916666666666666, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+Result with max accuracy: {'loss': 0.9551727672417959, 'acc': 0.7916666666666666, 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 40, 'numFullyConnectedPerceptronsLastLayer': 20}
+Started: 2018-07-02 21:21:17.115492 ; ended: 2018-07-03 00:16:07.784271
+Elapsed: 2:54:50.668779
