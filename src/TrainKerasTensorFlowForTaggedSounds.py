@@ -262,15 +262,15 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         # Layer 1: W rows of MFCC, MFCC derivative, MFCC double derivative, log-filterbank-energy
         # row information (51 columns) leading to the first convolutional layer.
         Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.baseNumColumns, 1)),
-        
-        # TODO: Experiment with: MaxPooling2D((2, 2))
+        MaxPooling2D(pool_size=(2, 2)),
+
         # TODO: Experiment with: Dropout(0.25)
 
         # Layer 2: Convolution over results from conv layer 1. This provides an integration over a wider time period,
         # using the features extracted from the first layer.
         Conv2D(numConv2Filters, conv2KernelSize, kernel_initializer='TruncatedNormal', activation='relu'),
+        MaxPooling2D(pool_size=(2, 2)),
 
-        # TODO: Experiment with: MaxPooling2D((2, 2))
         # TODO: Experiment with: Dropout(0.25)
 
         # Reduce dimensionality before connecting to fully connected layers.
@@ -295,14 +295,19 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
 
     # TODO: Experiment with epochs (or move to dynamic epochs by epsilon gain)
     # TODO: Experiment with batch size
-    model.fit(mfccTensors, oneHotLabelsByInstrumentOrdinal, epochs=epochs, batch_size=batchSize)
+    history = model.fit(mfccTensors, oneHotLabelsByInstrumentOrdinal, epochs=epochs, batch_size=batchSize)
 
     score = model.evaluate(testMfccTensors, testOneHotLabelsByInstrumentOrdinal, batch_size=batchSize)
     print("Score:", model.metrics_names, score)
 
     return {
-        model.metrics_names[0]: score[0],
-        model.metrics_names[1]: score[1],
+        "training_" + model.metrics_names[0]: history.history[model.metrics_names[0]][epochs - 1],
+        "training_" + model.metrics_names[1]: history.history[model.metrics_names[1]][epochs - 1],
+        "testdata_" + model.metrics_names[0]: score[0],
+        "testdata_" + model.metrics_names[1]: score[1],
+        "batchSize": batchSize,
+        "epochs": epochs,
+        "maxpoolsize": (2, 2),
         "numConv1Filters": numConv1Filters,
         "conv1KernelSize": conv1KernelSize,
         "numConv2Filters": numConv2Filters,
@@ -329,8 +334,8 @@ resultMaxAccuracy = None
 maxAccuracy = 0
 for result in results:
     print(result)
-    loss = result["loss"]
-    accuracy = result["acc"]
+    loss = result["testdata_loss"]
+    accuracy = result["testdata_acc"]
     if loss < minLoss:
         minLoss = loss
         resultMinLoss = result
