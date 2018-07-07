@@ -10,72 +10,36 @@
 
 from datetime import datetime
 import glob
-import json
-from keras.layers import Activation, Conv2D, Dense, Flatten, MaxPooling2D
+from keras.layers import Activation, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 from keras.models import Sequential
 import keras.optimizers
 import keras.utils
 from MfccWavLoader import MfccWavLoader
+from SoundTagJsonReader import SoundTagJsonReader
 from StayAwake import preventComputerFromSleeping
 import os
 import numpy
 import random
 import sys
 
-startDateTime = datetime.now()
-print("Start:", startDateTime)
-
-class TaggedSound:
-    """Per-sound tag data format stored in the TaggedSoundData.Sounds collection"""
-    def __init__(self, soundRelativePath, instrumentTag, tags):
-        self.SoundRelativePath = soundRelativePath
-        self.InstrumentTag = instrumentTag
-        self.Tags = tags
-
-class TaggedSoundData:
-    """Top-level data type stored in TaggedSoundData.json"""
-
-    def __init__(self, folderPath):
-        self.FolderPath = folderPath
-        self.Sounds = []
-
-class SoundTagJsonReader:
-    """
-    Reads a wav file tag summary format into self.data.
-    Data in a JSON form similar to:
-    {
-        "Sounds": [
-            {
-                "SoundRelativePath": "snare_sample1.wav",
-                "InstrumentTag": "snare",
-                "Tags": [ ]
-            },
-            {
-                "SoundRelativePath": "snare_sample2.wav",
-                "InstrumentTag": "snare",
-                "Tags": [ ]
-            },
-            {
-                "SoundRelativePath": "tom-tom_sample1.wav",
-                "InstrumentTag": "tom-tom",
-                "Tags": [ "low" ]
-            }
-        ]
-    }
-    """
-
-    fileName = "TaggedSoundData.json"
-
-    def __init__(self, folderPath):
-        self.folderPath = folderPath
-        tagDataPath = os.path.join(folderPath, SoundTagJsonReader.fileName)
-        print("Reading tag data from:", tagDataPath)
-        f = open(tagDataPath)
-        self.data = json.load(f)
-
 if len(sys.argv) < 2:
     print('First param must be a directory containing wav files and ' + SoundTagJsonReader.fileName)
     exit(1)
+soundTagFileName = sys.argv[1]
+
+# Avoid loss of experimental results during long runs
+resultFileName = "results.out"
+if len(sys.argv) >= 3:
+    resultFile = sys.argv[3]
+resultFile = open(resultFileName, "w")
+
+# Tee specific outputs to both the result file and stdout for safekeeping.
+def Log(*objects):
+    print(objects)
+    print(objects, file=resultFile)
+
+startDateTime = datetime.now()
+Log("Start:", startDateTime)
 
 # Keras / TensorFlow model: A Time-Delay Neural Network in the same vein as those used
 # for finding speech phonemes in a stream of Mel-Frequency Cepstral Coefficients
@@ -149,7 +113,7 @@ if len(sys.argv) < 2:
 # - Training batch size
 # - Number of epochs
 
-soundTagJsonReader = SoundTagJsonReader(sys.argv[1])
+soundTagJsonReader = SoundTagJsonReader(soundTagFileName)
 
 # We split the data set into training and test sets.
 # Since we don't know until we evaluate any globs in the JSON how many
@@ -192,7 +156,7 @@ for soundData in soundTagJsonReader.data["Sounds"]:
             testInstrumentMfccData.append(mfccRows)
             testInstrumentLabelIndexes.append(label)
 
-print("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
+Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
 
 # Zero-pad all sounds to the max number of rows, and expand with a 3rd dimension.
 # TODO: Or do we create multiple TDNNs trained at each row length?
@@ -208,7 +172,7 @@ for i in range(len(testInstrumentMfccData)):
     testInstrumentMfccData[i] = zeroPadTo3d(testInstrumentMfccData[i])
 
 numInstruments = len(instrumentIndexMap)
-print("Num instruments: ", numInstruments)
+Log("Num instruments:", numInstruments)
 
 # Reformat the resulting lists of training and test data into a 4D tensor
 # required by the Conv2D Keras layers. This is "channels_last" format,
@@ -249,37 +213,40 @@ conv2KernelSizeValues = [ 5 ]
 numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
 #numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16 ]
 
+conv1DropoutValues = [ 0 ] #, 0.1, 0.25, 0.33, 0.5 ]
+conv2DropoutValues = [ 0 ] # 0.1, 0.25, 0.33, 0.5 ]
+fullyConnectedDropoutValues = [0.25, 0.5 ] # 0, 0.33,  0.1, 
 
-def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32):
+def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32, conv1Dropout = 0.25, conv2Dropout = 0.25, fullyConnectedDropout = 0.5):
     print("TrainAndValidateModel:")
     print("  numConv1Filters:", numConv1Filters)
     print("  conv1KernelSize:", conv1KernelSize)
     print("  numConv2Filters:", numConv2Filters)
     print("  conv2KernelSize:", conv1KernelSize)
     print("  numFullyConnectedPerceptronsLastLayer:", numFullyConnectedPerceptronsLastLayer)
+    print("  conv1Dropout:", conv1Dropout)
+    print("  conv2Dropout:", conv2Dropout)
+    print("  fullyConnectedDropout:", fullyConnectedDropout)
 
     model = Sequential([
         # Layer 1: W rows of MFCC, MFCC derivative, MFCC double derivative, log-filterbank-energy
         # row information (51 columns) leading to the first convolutional layer.
         Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.baseNumColumns, 1)),
         MaxPooling2D(pool_size=(2, 2)),
-
-        # TODO: Experiment with: Dropout(0.25)
+        Dropout(conv1Dropout),
 
         # Layer 2: Convolution over results from conv layer 1. This provides an integration over a wider time period,
         # using the features extracted from the first layer.
         Conv2D(numConv2Filters, conv2KernelSize, kernel_initializer='TruncatedNormal', activation='relu'),
         MaxPooling2D(pool_size=(2, 2)),
-
-        # TODO: Experiment with: Dropout(0.25)
+        Dropout(conv2Dropout),
 
         # Reduce dimensionality before connecting to fully connected layers.
         Flatten(),
 
         # Layer 3: Fully connected layer with ReLU activation.
         Dense(numFullyConnectedPerceptronsLastLayer, activation='relu'),
-
-        # TODO: Experiment with: Dropout(0.5)
+        Dropout(fullyConnectedDropout),
 
         # Outputs: SoftMax activation to get probabilities by instrument.
         Dense(numInstruments, activation='softmax')
@@ -300,7 +267,7 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
     score = model.evaluate(testMfccTensors, testOneHotLabelsByInstrumentOrdinal, batch_size=batchSize)
     print("Score:", model.metrics_names, score)
 
-    return {
+    result = {
         "training_" + model.metrics_names[0]: history.history[model.metrics_names[0]][epochs - 1],
         "training_" + model.metrics_names[1]: history.history[model.metrics_names[1]][epochs - 1],
         "testdata_" + model.metrics_names[0]: score[0],
@@ -311,9 +278,21 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         "numConv1Filters": numConv1Filters,
         "conv1KernelSize": conv1KernelSize,
         "numConv2Filters": numConv2Filters,
-        "conv1KernelSize": conv1KernelSize,
-        "numFullyConnectedPerceptronsLastLayer": numFullyConnectedPerceptronsLastLayer
+        "conv2KernelSize": conv2KernelSize,
+        "numFullyConnectedPerceptronsLastLayer": numFullyConnectedPerceptronsLastLayer,
+        "conv1Dropout": conv1Dropout,
+        "conv2Dropout": conv2Dropout,
+        "fulyConnectedDropout": fullyConnectedDropout,
+        "numInstruments": numInstruments,
+        "numTrainingSamples": len(instrumentMfccData),
+        "numTestSamples": len(testInstrumentMfccData) 
      }
+
+    # Memory usage grows without bound. Attempt to mitigate with a deliberate dealloc of the model.
+    # TODO: Obviously when it's time to same the model for reuse instead of just experiment, we'll have to remove.
+    del model
+
+    return result
 
 results = []
 
@@ -324,7 +303,12 @@ try:
             for numConv2Filters in numConv2FiltersValues:
                 for conv2KernelSize in conv2KernelSizeValues:
                     for numFullyConnectedPerceptronsLastLayer in numFullyConnectedPerceptronsLastLayerValues:
-                        results.append(TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer))
+                        for conv1Dropout in conv1DropoutValues:
+                            for conv2Dropout in conv2DropoutValues:
+                                for fullyConnectedDropout in fullyConnectedDropoutValues:
+                                    result = TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, conv1Dropout=conv1Dropout, conv2Dropout=conv2Dropout, fullyConnectedDropout=fullyConnectedDropout)
+                                    Log(result)
+                                    results.append(result)
 finally:
     preventComputerFromSleeping(False)
 
@@ -343,9 +327,9 @@ for result in results:
         maxAccuracy = accuracy
         resultMaxAccuracy = result
 
-print("Result with min loss:", resultMinLoss)
-print("Result with max accuracy:", resultMaxAccuracy)
+Log("Result with min loss:", resultMinLoss)
+Log("Result with max accuracy:", resultMaxAccuracy)
 
 endDateTime = datetime.now()
-print("Started:", startDateTime, "; ended:", endDateTime)
-print("Elapsed:", endDateTime - startDateTime)
+Log("Started:", startDateTime, "; ended:", endDateTime)
+Log("Elapsed:", endDateTime - startDateTime)
