@@ -35,8 +35,8 @@ resultFile = open(resultFileName, "w")
 
 # Tee specific outputs to both the result file and stdout for safekeeping.
 def Log(*objects):
-    print(objects)
-    print(objects, file=resultFile)
+    print(*objects)
+    print(*objects, file=resultFile)
 
 startDateTime = datetime.now()
 Log("Start:", startDateTime)
@@ -121,6 +121,13 @@ soundTagJsonReader = SoundTagJsonReader(soundTagFileName)
 trainingProbNumerator = 4
 trainingProbDenom = 5
 
+# To ensure that all wavs generate comparable MFCCs, we need to ensure the top end
+# of the MFCC bucketing range is consistent. The default MFCC generation takes
+# the wav's rateHz / 2. We have 44.1KHz and 48KHz samples so we set the max range
+# to half the min, and assert below that we're not loading samples with even lower rates.
+wavMinAllowedHz = 44100
+mfccMaxRangeHz = wavMinAllowedHz / 2
+
 # We need the number of instruments for various calculations.
 instrumentIndexMap = { }
 currentIndex = 0
@@ -130,6 +137,7 @@ testInstrumentMfccData = []
 testInstrumentLabelIndexes = []
 maxMfccRows = 0
 minMfccRows = 100000000
+minWavHz = 10000000
 for soundData in soundTagJsonReader.data["Sounds"]:
     instrumentTag = soundData["InstrumentTag"]
     label = instrumentIndexMap.get(instrumentTag)
@@ -140,13 +148,14 @@ for soundData in soundTagJsonReader.data["Sounds"]:
 
     fullGlob = os.path.join(soundTagJsonReader.folderPath, soundData["SoundRelativePath"])
     for soundPath in glob.glob(fullGlob):
-        mfccLoader = MfccWavLoader(soundPath)
+        mfccLoader = MfccWavLoader(soundPath, mfccMaxRangeHz)
         mfccRows = mfccLoader.fullFeatureArray
         shape = numpy.shape(mfccRows)
         numMfccRows = shape[0]
         print(soundPath, "shape", shape)
         maxMfccRows = max(maxMfccRows, numMfccRows)
         minMfccRows = min(minMfccRows, numMfccRows)
+        minWavHz = min(minWavHz, mfccLoader.rateHz)
 
         dieRoll = random.randint(1, trainingProbDenom)
         if dieRoll <= trainingProbNumerator:
@@ -157,6 +166,10 @@ for soundData in soundTagJsonReader.data["Sounds"]:
             testInstrumentLabelIndexes.append(label)
 
 Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
+
+if minWavHz < wavMinAllowedHz:
+    print("ERROR: One or more wav files found with rate in Hz less than configured minimum. Min found:", minWavHz, " allowed min:", wavMinAllowedHz)
+    exit(1)
 
 # Zero-pad all sounds to the max number of rows, and expand with a 3rd dimension.
 # TODO: Or do we create multiple TDNNs trained at each row length?

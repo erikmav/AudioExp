@@ -21,13 +21,14 @@ class MfccWavLoader:
     fullCsvHeader = baseCsvHeader + ',' + logFbankHeader
     fullNumColumns = 51
 
-    def __init__(self, wavPath, produceLogFbank=False):
+    def __init__(self, wavPath, mfccMaxRangeHz=None, produceLogFbank=False):
         self.wavPath = wavPath
         self.producedLogFbank = produceLogFbank
 
         # Convert the WAV file into monaural samples in a NumPy array.
         (rateHz, samples) = wav.read(wavPath)
         print("Loaded", wavPath, rateHz, "Hz")
+        self.rateHz = rateHz
 
         # Calculate the MFCC features. https://github.com/jameslyons/python_speech_features#mfcc-features
         # We keep the defaults: 25ms frame window, 10ms step length, 13 cepstral coefficients calculated,
@@ -36,7 +37,7 @@ class MfccWavLoader:
         # We do activate the appendEnergy feature to replace MFCC feature column 0 with the log of the frame energy.
         # We get back a NumPy array of 13 cepstral coefficients per row (first column is the log of the frame
         # total energy) by a number of rows matching the number of windows across the steps in the wave samples.
-        self.mfccFeatures = mfcc(samples, rateHz, appendEnergy=True)
+        self.mfccFeatures = mfcc(samples, rateHz, appendEnergy=True, highfreq=mfccMaxRangeHz)
 
         # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
         # before and after the current row whose samples are averaged to get the delta. 13 columns.
