@@ -1,4 +1,4 @@
-Analysis summary: Added only maxpool(2,2) after each convolutional layer. Training data min loss across all convolutional layer sizes dropped by 4X over the previous experiment round without it - 34% down to 7.5%. Max accuracy was approximately the same (94%). Using dropout cut the data size at all stages and reduced run time by 3X from the previous experiment - 2 hours down to 40 minutes.
+Analysis summary: Added only maxpool(2,2) after each convolutional layer. Training data min loss was approximately the same as non-maxpool run (prev 6.8% -> current 7.5%). This may be randomness in the training sets however - there is no clear trend in the data pointing out any specific sets of hyperparameters (conv filter counts and sizes in these cases). Max accuracy was approximately the same (94%). Using maxpool cut the data size at all stages and reduced run time by 3X from the previous experiment - 2 hours down to 40 minutes.
 
 Experiment list remains the same as earlier 20180706 experiment:
 
@@ -6,7 +6,7 @@ Experiment list remains the same as earlier 20180706 experiment:
 2. Try implementing dropout to reduce overfitting. Some numbers from examples show 50% dropout after first conv layer, 25% after second, but this opens a new optimization dimension.
 3. Increase the number of samples by tagging more raw data.
 4. Increase the number of samples by adding noise to existing samples. Implement in a deterministic way to ensure comparable results.
-5. Reopen more training dimensions. The arrays related to non-conv sizes are commented out in an attempt tp get convergence first (now achieved with normalization).
+5. Reopen more training dimensions. The arrays related to non-conv sizes are commented out in an attempt to get convergence first (now achieved with normalization).
 
 
 {'training_loss': 0.0006708339567443258, 'training_acc': 1.0, 'testdata_loss': 0.5937527507543564, 'testdata_acc': 0.84, 'batchSize': 16, 'epochs': 32, 'maxpoolsize': (2, 2), 'numConv1Filters': 5, 'conv1KernelSize': 5, 'numConv2Filters': 5, 'numFullyConnectedPerceptronsLastLayer': 20}

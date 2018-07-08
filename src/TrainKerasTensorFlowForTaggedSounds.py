@@ -295,7 +295,7 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         "numFullyConnectedPerceptronsLastLayer": numFullyConnectedPerceptronsLastLayer,
         "conv1Dropout": conv1Dropout,
         "conv2Dropout": conv2Dropout,
-        "fulyConnectedDropout": fullyConnectedDropout,
+        "fullyConnectedDropout": fullyConnectedDropout,
         "numInstruments": numInstruments,
         "numTrainingSamples": len(instrumentMfccData),
         "numTestSamples": len(testInstrumentMfccData) 
