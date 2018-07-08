@@ -230,7 +230,7 @@ conv1DropoutValues = [ 0 ] #, 0.1, 0.25, 0.33, 0.5 ]
 conv2DropoutValues = [ 0 ] # 0.1, 0.25, 0.33, 0.5 ]
 fullyConnectedDropoutValues = [ 0 ] # 0, 0.33,  0.1, 0.25, 0.5 
 
-def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32, conv1Dropout = 0.25, conv2Dropout = 0.25, fullyConnectedDropout = 0.5):
+def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32, conv1Dropout = 0, conv2Dropout = 0, fullyConnectedDropout = 0):
     print("TrainAndValidateModel:")
     print("  numConv1Filters:", numConv1Filters)
     print("  conv1KernelSize:", conv1KernelSize)
@@ -242,8 +242,8 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
     print("  fullyConnectedDropout:", fullyConnectedDropout)
 
     model = Sequential([
-        # Layer 1: W rows of MFCC, MFCC derivative, MFCC double derivative, log-filterbank-energy
-        # row information (51 columns) leading to the first convolutional layer.
+        # Layer 1: W rows of MFCC, MFCC derivative, MFCC double derivative
+        # row information (39 columns) leading to the first convolutional layer.
         Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.baseNumColumns, 1)),
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(conv1Dropout),

@@ -34,10 +34,11 @@ class MfccWavLoader:
         # We keep the defaults: 25ms frame window, 10ms step length, 13 cepstral coefficients calculated,
         # 26 filters in the MFCC filterbank, 512-sample FFT calculation size, 0 Hz low frequency,
         # rateHz/2 high frequency, 0.97 pre-emphasis filter, 22 lifter on final cepstral coefficients.
-        # We do activate the appendEnergy feature to replace MFCC feature column 0 with the log of the frame energy.
-        # We get back a NumPy array of 13 cepstral coefficients per row (first column is the log of the frame
-        # total energy) by a number of rows matching the number of windows across the steps in the wave samples.
-        self.mfccFeatures = mfcc(samples, rateHz, appendEnergy=True, highfreq=mfccMaxRangeHz)
+        # We avoid the appendEnergy parameter to ensure our use of convolutional filters over the 2D array
+        # of MFCCs across time can find patterns in comparably scaled numbers.
+        # We get back a NumPy array of 13 cepstral coefficients per row by a number of rows matching
+        # the number of windows across the steps in the wave samples.
+        self.mfccFeatures = mfcc(samples, rateHz, highfreq=mfccMaxRangeHz)
 
         # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
         # before and after the current row whose samples are averaged to get the delta. 13 columns.
@@ -79,6 +80,6 @@ class MfccWavLoader:
         # the average coefficient energy computed over all frames, then normalize each coefficient
         # to lie in [-1, 1]. This is the same algorithm each frame of the MFCCs of an input sound stream
         # will need to run to match against these normalized values, and produces far better results.
-        avg = numpy.average(mfccs[:,1:13])  # Avoid normalizing energy column 0
-        numpy.subtract(mfccs[:,1:13], avg)
-        mfccs[:,1:13] /= numpy.max(numpy.abs(mfccs[:,1:13]))
+        avg = numpy.average(mfccs)
+        numpy.subtract(mfccs, avg)
+        mfccs /= numpy.max(numpy.abs(mfccs))
