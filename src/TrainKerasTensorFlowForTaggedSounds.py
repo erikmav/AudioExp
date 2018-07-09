@@ -158,7 +158,7 @@ if minWavHz < wavMinAllowedHz:
 # can be just the MFCCs (dimension height of 1) or the MFCCs plus its derivatives (dimension height of 2 or more).
 # TODO: Or do we create multiple TDNNs trained at each row length?
 numMfccLayers = 1
-numMfccColumns = 13
+numMfccColumns = 12
 def zeroPad(mfccLayers):
     shape = numpy.shape(mfccLayers)
     numMfccRows = shape[0]
@@ -237,8 +237,7 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
     print("  fullyConnectedDropout:", fullyConnectedDropout)
 
     model = Sequential([
-        # Layer 1: Inputs of  MFCC, MFCC derivative, MFCC double derivative
-        # row information (13 columns x 3 layers) leading to the first convolutional layer.
+        # Layer 1: Inputs of MFCCs leading to the first convolutional layer.
         Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, numMfccColumns, numMfccLayers), padding='same'),
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(conv1Dropout),

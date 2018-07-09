@@ -12,9 +12,9 @@ class MfccWavLoader:
     """
 
     logFbankHeader = 'logFbank0,logFbank1,logFbank2,logFbank3,logFbank4,logFbank5,logFbank6,logFbank7,logFbank8,logFbank9,logFbank10,logFbank11'
-    mfccHeader = 'mfcc1,mfcc2,mfcc3,mfcc4,mfcc5,mfcc6,mfcc7,mfcc8,mfcc9,mfcc10,mfcc11,mfcc12,mfcc13'
-    mfccDerivativeHeader = 'mfccd1,mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,mfccd13'
-    mfcc2ndDerivativeHeader = 'mfcc2d1,mfcc2d2,mfcc2d3,mfcc2d4,mfcc2d5,mfcc2d6,mfcc2d7,mfcc2d8,mfcc2d9,mfcc2d10,mfcc2d11,mfcc2d12,mfcc2d13'
+    mfccHeader = 'mfcc2,mfcc3,mfcc4,mfcc5,mfcc6,mfcc7,mfcc8,mfcc9,mfcc10,mfcc11,mfcc12,mfcc13'
+    mfccDerivativeHeader = 'mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,mfccd13'
+    mfcc2ndDerivativeHeader = 'mfcc2d2,mfcc2d3,mfcc2d4,mfcc2d5,mfcc2d6,mfcc2d7,mfcc2d8,mfcc2d9,mfcc2d10,mfcc2d11,mfcc2d12,mfcc2d13'
 
     def __init__(self, wavPath, mfccMaxRangeHz=None, produceLogFbank=False, produceFirstDerivative=False, produceSecondDerivative=False):
         self.wavPath = wavPath
@@ -32,8 +32,9 @@ class MfccWavLoader:
         # We avoid the appendEnergy parameter to ensure our use of convolutional filters over the 2D array
         # of MFCCs across time can find patterns in comparably scaled numbers.
         # We get back a NumPy array of 13 cepstral coefficients per row by a number of rows matching
-        # the number of windows across the steps in the wave samples.
-        self.mfccFeatures = mfcc(samples, rateHz, highfreq=mfccMaxRangeHz)
+        # the number of windows across the steps in the wave samples. We drop the first column per
+        # common implementations of MFCC machine learning.
+        self.mfccFeatures = mfcc(samples, rateHz, highfreq=mfccMaxRangeHz)[:,1:13]
 
         if produceFirstDerivative:
             # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
@@ -72,7 +73,7 @@ class MfccWavLoader:
                     toStack.append(self.mfccDeltaDeltas)
                     self.csvHeader += "," + MfccWavLoader.mfcc2ndDerivativeHeader
 
-            # Nx13xM
+            # Nx12xM
             self.fullFeatureArray = numpy.stack(toStack, axis=-1)
 
     def writeFullFeatureArrayToCsvStream(self, outStream):
