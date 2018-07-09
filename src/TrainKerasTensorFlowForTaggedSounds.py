@@ -171,7 +171,7 @@ for i in range(len(allInstrumentMfccData)):
     allInstrumentMfccData[i], numMfccLayers, numMfccColumns = zeroPad(allInstrumentMfccData[i])
 print("numMfccLayers:", numMfccLayers)
 
-# Binarize the labels (convert to numbers)
+# Binarize the labels (convert to 1-hot arrays from text labels/tags)
 labelBinarizer = LabelBinarizer()
 oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
 numInstruments = oneHotLabels.shape[1]
