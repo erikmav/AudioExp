@@ -166,9 +166,10 @@ def zeroPad(mfccLayers):
     numMfccLayers = shape[2]
     if (numMfccRows < maxMfccRows):
         mfccLayers = numpy.append(mfccLayers, numpy.zeros(((maxMfccRows - numMfccRows), numMfccColumns, numMfccLayers)), axis=0)
-    return mfccLayers
+    return (mfccLayers, numMfccLayers, numMfccColumns)
 for i in range(len(allInstrumentMfccData)):
-    allInstrumentMfccData[i] = zeroPad(allInstrumentMfccData[i])
+    allInstrumentMfccData[i], numMfccLayers, numMfccColumns = zeroPad(allInstrumentMfccData[i])
+print("numMfccLayers:", numMfccLayers)
 
 # Binarize the labels (convert to numbers)
 labelBinarizer = LabelBinarizer()
