@@ -16,7 +16,8 @@ class MfccWavLoader:
     baseCsvHeader = 'logEnergy,mfcc1,mfcc2,mfcc3,mfcc4,mfcc5,mfcc6,mfcc7,mfcc8,mfcc9,mfcc10,mfcc11,mfcc12,' + \
         'dLogEnergy,mfccd1,mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,' + \
         'd2LogEnergy,mfcc2d1,mfcc2d2,mfcc2d3,mfcc2d4,mfcc2d5,mfcc2d6,mfcc2d7,mfcc2d8,mfcc2d9,mfcc2d10,mfcc2d11,mfcc2d12'
-    baseNumColumns = 39
+    baseNumColumns = 13
+    baseNumDimensions = 3  # MFCCs, derivates, 2nd derivatives
 
     fullCsvHeader = baseCsvHeader + ',' + logFbankHeader
     fullNumColumns = 51
@@ -66,7 +67,8 @@ class MfccWavLoader:
             self.fullFeatureArray = numpy.concatenate([self.mfccFeatures, self.mfccDeltas, self.mfccDeltaDeltas, self.logFbankFeatures], axis=1)
 
         else:
-            self.fullFeatureArray = numpy.concatenate([self.mfccFeatures, self.mfccDeltas, self.mfccDeltaDeltas], axis=1)
+            # 13xNx3
+            self.fullFeatureArray = numpy.stack([self.mfccFeatures, self.mfccDeltas, self.mfccDeltaDeltas], axis=-1)
 
     def writeFullFeatureArrayToCsvStream(self, outStream):
         if self.producedLogFbank:

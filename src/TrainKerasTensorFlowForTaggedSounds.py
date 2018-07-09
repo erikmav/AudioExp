@@ -15,11 +15,13 @@ from keras.models import Sequential
 import keras.optimizers
 import keras.utils
 from MfccWavLoader import MfccWavLoader
-from SoundTagJsonReader import SoundTagJsonReader
-from StayAwake import preventComputerFromSleeping
 import os
 import numpy
 import random
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+from SoundTagJsonReader import SoundTagJsonReader
+from StayAwake import preventComputerFromSleeping
 import sys
 
 if len(sys.argv) < 2:
@@ -115,12 +117,6 @@ Log("Start:", startDateTime)
 
 soundTagJsonReader = SoundTagJsonReader(soundTagFileName)
 
-# We split the data set into training and test sets.
-# Since we don't know until we evaluate any globs in the JSON how many
-# sample files we have, we roll the dice as we load each sound.
-trainingProbNumerator = 4
-trainingProbDenom = 5
-
 # To ensure that all wavs generate comparable MFCCs, we need to ensure the top end
 # of the MFCC bucketing range is consistent. The default MFCC generation takes
 # the wav's rateHz / 2. We have 44.1KHz and 48KHz samples so we set the max range
@@ -129,41 +125,28 @@ wavMinAllowedHz = 44100
 mfccMaxRangeHz = wavMinAllowedHz / 2
 
 # We need the number of instruments for various calculations.
-instrumentIndexMap = { }
 currentIndex = 0
-instrumentMfccData = []
-instrumentLabelIndexes = []
-testInstrumentMfccData = []
-testInstrumentLabelIndexes = []
+allInstrumentMfccData = []
+allInstrumentLabels = []
 maxMfccRows = 0
 minMfccRows = 100000000
 minWavHz = 10000000
 for soundData in soundTagJsonReader.data["Sounds"]:
     instrumentTag = soundData["InstrumentTag"]
-    label = instrumentIndexMap.get(instrumentTag)
-    if label is None:
-        label = currentIndex
-        instrumentIndexMap[instrumentTag] = currentIndex
-        currentIndex += 1
 
     fullGlob = os.path.join(soundTagJsonReader.folderPath, soundData["SoundRelativePath"])
     for soundPath in glob.glob(fullGlob):
         mfccLoader = MfccWavLoader(soundPath, mfccMaxRangeHz)
-        mfccRows = mfccLoader.fullFeatureArray
-        shape = numpy.shape(mfccRows)
+        mfccLayers = mfccLoader.fullFeatureArray
+        shape = numpy.shape(mfccLayers)
         numMfccRows = shape[0]
         print(soundPath, "shape", shape)
         maxMfccRows = max(maxMfccRows, numMfccRows)
         minMfccRows = min(minMfccRows, numMfccRows)
         minWavHz = min(minWavHz, mfccLoader.rateHz)
 
-        dieRoll = random.randint(1, trainingProbDenom)
-        if dieRoll <= trainingProbNumerator:
-            instrumentMfccData.append(mfccRows)
-            instrumentLabelIndexes.append(label)
-        else:
-            testInstrumentMfccData.append(mfccRows)
-            testInstrumentLabelIndexes.append(label)
+        allInstrumentMfccData.append(mfccLayers)
+        allInstrumentLabels.append(instrumentTag)
 
 Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
 
@@ -171,34 +154,41 @@ if minWavHz < wavMinAllowedHz:
     print("ERROR: One or more wav files found with rate in Hz less than configured minimum. Min found:", minWavHz, " allowed min:", wavMinAllowedHz)
     exit(1)
 
-# Zero-pad all sounds to the max number of rows, and expand with a 3rd dimension.
+# Zero-pad all sounds to the max number of rows. Assumes layot of (rows, cols, channels) where channels
+# can be just the MFCCs (dimension height of 1) or the MFCCs plus its derivatives (dimension height of 2 or more).
 # TODO: Or do we create multiple TDNNs trained at each row length?
-def zeroPadTo3d(mfccRows):
-    shape = numpy.shape(mfccRows)
+def zeroPad(mfccLayers):
+    shape = numpy.shape(mfccLayers)
     numMfccRows = shape[0]
     if (numMfccRows < maxMfccRows):
-        mfccRows = numpy.append(mfccRows, numpy.zeros(((maxMfccRows - numMfccRows), shape[1])), axis=0)
-    return mfccRows[..., numpy.newaxis]  # Makes NxM into NxMx1
-for i in range(len(instrumentMfccData)):
-    instrumentMfccData[i] = zeroPadTo3d(instrumentMfccData[i])
-for i in range(len(testInstrumentMfccData)):
-    testInstrumentMfccData[i] = zeroPadTo3d(testInstrumentMfccData[i])
+        mfccLayers = numpy.append(mfccLayers, numpy.zeros(((maxMfccRows - numMfccRows), shape[1], shape[2])), axis=0)
+    return mfccLayers
+for i in range(len(allInstrumentMfccData)):
+    allInstrumentMfccData[i] = zeroPad(allInstrumentMfccData[i])
 
-numInstruments = len(instrumentIndexMap)
+# Binarize the labels (convert to numbers)
+labelBinarizer = LabelBinarizer()
+oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
+print(labelBinarizer)
+print(oneHotLabels)
+numInstruments = oneHotLabels.shape[1]
 Log("Num instruments:", numInstruments)
+
+# Partition the data into training and testing splits using 80% of
+# the data for training and the remaining 20% for testing.
+(instrumentMfccData, testInstrumentMfccData, instrumentOneHotLabels, testInstrumentOneHotLabels) = train_test_split(allInstrumentMfccData,
+	oneHotLabels, test_size=0.2, random_state=42)
 
 # Reformat the resulting lists of training and test data into a 4D tensor
 # required by the Conv2D Keras layers. This is "channels_last" format,
-# (batch, height, width, channels). channels=1, width is the number of
+# (batch, height, width, channels). channels is the number of MFCC layers (just the coefficients
+# or the coefficients and their derivatives), width is the number of
 # MFCC columns, height is the number of rows, batch is the total set of
 # training or test.
 mfccTensors = numpy.stack(instrumentMfccData)
 print("Training tensor shape:", numpy.shape(mfccTensors))
 testMfccTensors = numpy.stack(testInstrumentMfccData)
 print("Testing tensor shape:", numpy.shape(testMfccTensors))
-
-oneHotLabelsByInstrumentOrdinal = keras.utils.to_categorical(instrumentLabelIndexes, numInstruments)
-testOneHotLabelsByInstrumentOrdinal = keras.utils.to_categorical(testInstrumentLabelIndexes, numInstruments)
 
 # For the first convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the input MFCCs.
@@ -213,8 +203,10 @@ conv1KernelSizeValues = [ 5 ]
 
 # For the second convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the results of the first conv layer.
+# From a tip at https://www.pyimagesearch.com/2018/04/16/keras-and-convolutional-neural-networks-cnns/ ,
+# we test with more filters here than in the conv1 layer.
 # TODO: Experiment with this value - hence an array
-numConv2FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32 ]
+numConv2FiltersValues = [ numInstruments * 2, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32, numInstruments * 64 ]
 
 # For the second convolutional layer, the size of the kernel that implies the size of the filters.
 # TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
@@ -224,7 +216,7 @@ conv2KernelSizeValues = [ 5 ]
 
 # TODO: Experiment with this value - hence an array
 numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
-#numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16 ]
+#numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32, numInstruments * 64, numInstruments * 128 ]
 
 conv1DropoutValues = [ 0 ] #, 0.1, 0.25, 0.33, 0.5 ]
 conv2DropoutValues = [ 0 ] # 0.1, 0.25, 0.33, 0.5 ]
@@ -242,15 +234,17 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
     print("  fullyConnectedDropout:", fullyConnectedDropout)
 
     model = Sequential([
-        # Layer 1: W rows of MFCC, MFCC derivative, MFCC double derivative
-        # row information (39 columns) leading to the first convolutional layer.
-        Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.baseNumColumns, 1)),
+        # Layer 1: Inputs of  MFCC, MFCC derivative, MFCC double derivative
+        # row information (13 columns x 3 layers) leading to the first convolutional layer.
+        Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.baseNumColumns, MfccWavLoader.baseNumDimensions), padding='same'),
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(conv1Dropout),
 
+        # TODO: Experiment with BatchNormalization(axis=3)
+
         # Layer 2: Convolution over results from conv layer 1. This provides an integration over a wider time period,
         # using the features extracted from the first layer.
-        Conv2D(numConv2Filters, conv2KernelSize, kernel_initializer='TruncatedNormal', activation='relu'),
+        Conv2D(numConv2Filters, conv2KernelSize, kernel_initializer='TruncatedNormal', activation='relu', padding='same'),
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(conv2Dropout),
 
@@ -275,9 +269,9 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
 
     # TODO: Experiment with epochs (or move to dynamic epochs by epsilon gain)
     # TODO: Experiment with batch size
-    history = model.fit(mfccTensors, oneHotLabelsByInstrumentOrdinal, epochs=epochs, batch_size=batchSize)
+    history = model.fit(mfccTensors, instrumentOneHotLabels, epochs=epochs, batch_size=batchSize)
 
-    score = model.evaluate(testMfccTensors, testOneHotLabelsByInstrumentOrdinal, batch_size=batchSize)
+    score = model.evaluate(testMfccTensors, testInstrumentOneHotLabels, batch_size=batchSize)
     print("Score:", model.metrics_names, score)
 
     result = {
