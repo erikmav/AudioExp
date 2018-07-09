@@ -12,17 +12,11 @@ class MfccWavLoader:
     """
 
     logFbankHeader = 'logFbank0,logFbank1,logFbank2,logFbank3,logFbank4,logFbank5,logFbank6,logFbank7,logFbank8,logFbank9,logFbank10,logFbank11'
+    mfccHeader = 'mfcc1,mfcc2,mfcc3,mfcc4,mfcc5,mfcc6,mfcc7,mfcc8,mfcc9,mfcc10,mfcc11,mfcc12,mfcc13'
+    mfccDerivativeHeader = 'mfccd1,mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,mfccd13'
+    mfcc2ndDerivativeHeader = 'mfcc2d1,mfcc2d2,mfcc2d3,mfcc2d4,mfcc2d5,mfcc2d6,mfcc2d7,mfcc2d8,mfcc2d9,mfcc2d10,mfcc2d11,mfcc2d12,mfcc2d13'
 
-    baseCsvHeader = 'logEnergy,mfcc1,mfcc2,mfcc3,mfcc4,mfcc5,mfcc6,mfcc7,mfcc8,mfcc9,mfcc10,mfcc11,mfcc12,' + \
-        'dLogEnergy,mfccd1,mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,' + \
-        'd2LogEnergy,mfcc2d1,mfcc2d2,mfcc2d3,mfcc2d4,mfcc2d5,mfcc2d6,mfcc2d7,mfcc2d8,mfcc2d9,mfcc2d10,mfcc2d11,mfcc2d12'
-    baseNumColumns = 13
-    baseNumDimensions = 3  # MFCCs, derivates, 2nd derivatives
-
-    fullCsvHeader = baseCsvHeader + ',' + logFbankHeader
-    fullNumColumns = 51
-
-    def __init__(self, wavPath, mfccMaxRangeHz=None, produceLogFbank=False):
+    def __init__(self, wavPath, mfccMaxRangeHz=None, produceLogFbank=False, produceFirstDerivative=False, produceSecondDerivative=False):
         self.wavPath = wavPath
         self.producedLogFbank = produceLogFbank
 
@@ -41,12 +35,14 @@ class MfccWavLoader:
         # the number of windows across the steps in the wave samples.
         self.mfccFeatures = mfcc(samples, rateHz, highfreq=mfccMaxRangeHz)
 
-        # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
-        # before and after the current row whose samples are averaged to get the delta. 13 columns.
-        self.mfccDeltas = delta(self.mfccFeatures, 2)
+        if produceFirstDerivative:
+            # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
+            # before and after the current row whose samples are averaged to get the delta. 13 columns.
+            self.mfccDeltas = delta(self.mfccFeatures, 2)
 
-        # Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas. 13 columns.
-        self.mfccDeltaDeltas = delta(self.mfccDeltas, 2)
+            if produceSecondDerivative:
+                # Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas. 13 columns.
+                self.mfccDeltaDeltas = delta(self.mfccDeltas, 2)
 
         # Now that we're done with derivatives, normalize the original MFCC coefficients (but not the
         # energy column 0).
@@ -63,19 +59,24 @@ class MfccWavLoader:
             # tutorial recommendation (later banks measure fast-changing harmonics in the high frequencies).
             logFbankFeatures = logfbank(samples, rateHz)
             self.logFbankFeatures = logFbankFeatures[:,1:13]
-    
-            self.fullFeatureArray = numpy.concatenate([self.mfccFeatures, self.mfccDeltas, self.mfccDeltaDeltas, self.logFbankFeatures], axis=1)
+            self.fullFeatureArray = numpy.stack([ self.logFbankFeatures ], axis=-1)
+            self.csvHeader = MfccWavLoader.logFbankHeader
 
         else:
-            # 13xNx3
-            self.fullFeatureArray = numpy.stack([self.mfccFeatures, self.mfccDeltas, self.mfccDeltaDeltas], axis=-1)
+            toStack = [ self.mfccFeatures ]
+            self.csvHeader = MfccWavLoader.mfccHeader
+            if produceFirstDerivative:
+                toStack.append(self.mfccDeltas)
+                self.csvHeader += "," + MfccWavLoader.mfccDerivativeHeader
+                if produceSecondDerivative:
+                    toStack.append(self.mfccDeltaDeltas)
+                    self.csvHeader += "," + MfccWavLoader.mfcc2ndDerivativeHeader
+
+            # Nx13xM
+            self.fullFeatureArray = numpy.stack(toStack, axis=-1)
 
     def writeFullFeatureArrayToCsvStream(self, outStream):
-        if self.producedLogFbank:
-            header = MfccWavLoader.fullCsvHeader
-        else:
-            header = MfccWavLoader.baseCsvHeader
-        numpy.savetxt(sys.stdout, self.fullFeatureArray, delimiter=',', header=header, comments='')
+        numpy.savetxt(sys.stdout, self.fullFeatureArray, delimiter=',', header=self.csvHeader, comments='')
 
     def normalizeMfccArray(self, mfccs):
         # Per http://www.cs.toronto.edu/%7Efritz/absps/waibelTDNN.pdf : Subtract from each coefficient

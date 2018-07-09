@@ -157,11 +157,15 @@ if minWavHz < wavMinAllowedHz:
 # Zero-pad all sounds to the max number of rows. Assumes layot of (rows, cols, channels) where channels
 # can be just the MFCCs (dimension height of 1) or the MFCCs plus its derivatives (dimension height of 2 or more).
 # TODO: Or do we create multiple TDNNs trained at each row length?
+numMfccLayers = 1
+numMfccColumns = 13
 def zeroPad(mfccLayers):
     shape = numpy.shape(mfccLayers)
     numMfccRows = shape[0]
+    numMfccColumns = shape[1]
+    numMfccLayers = shape[2]
     if (numMfccRows < maxMfccRows):
-        mfccLayers = numpy.append(mfccLayers, numpy.zeros(((maxMfccRows - numMfccRows), shape[1], shape[2])), axis=0)
+        mfccLayers = numpy.append(mfccLayers, numpy.zeros(((maxMfccRows - numMfccRows), numMfccColumns, numMfccLayers)), axis=0)
     return mfccLayers
 for i in range(len(allInstrumentMfccData)):
     allInstrumentMfccData[i] = zeroPad(allInstrumentMfccData[i])
@@ -169,8 +173,6 @@ for i in range(len(allInstrumentMfccData)):
 # Binarize the labels (convert to numbers)
 labelBinarizer = LabelBinarizer()
 oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
-print(labelBinarizer)
-print(oneHotLabels)
 numInstruments = oneHotLabels.shape[1]
 Log("Num instruments:", numInstruments)
 
@@ -199,7 +201,7 @@ numConv1FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4
 # TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
 # wider spans across MFCC ranges or wider spans across time.
 conv1KernelSizeValues = [ 5 ]
-#conv1KernelSizeValues = [ 1, 3, 5, 7, (3,5), (5,3), (2, MfccWavLoader.baseNumColumns), (3, MfccWavLoader.baseNumColumns), (4, MfccWavLoader.baseNumColumns) ]
+#conv1KernelSizeValues = [ 1, 3, 5, 7, (3,5), (5,3), (2, numMfccColumns), (3, numMfccColumns), (4, numMfccColumns) ]
 
 # For the second convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the results of the first conv layer.
@@ -236,7 +238,7 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
     model = Sequential([
         # Layer 1: Inputs of  MFCC, MFCC derivative, MFCC double derivative
         # row information (13 columns x 3 layers) leading to the first convolutional layer.
-        Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, MfccWavLoader.baseNumColumns, MfccWavLoader.baseNumDimensions), padding='same'),
+        Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, numMfccColumns, numMfccLayers), padding='same'),
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(conv1Dropout),
 
