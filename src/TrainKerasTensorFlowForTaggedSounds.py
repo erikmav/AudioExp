@@ -222,7 +222,7 @@ numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
 
 conv1DropoutValues = [ 0 ] #, 0.1, 0.25, 0.33, 0.5 ]
 conv2DropoutValues = [ 0 ] # 0.1, 0.25, 0.33, 0.5 ]
-fullyConnectedDropoutValues = [ 0 ] # 0, 0.33,  0.1, 0.25, 0.5 
+fullyConnectedDropoutValues = [ 0.5 ] # 0, 0.33,  0.1, 0.25, 0.5 
 
 def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32, conv1Dropout = 0, conv2Dropout = 0, fullyConnectedDropout = 0):
     print("TrainAndValidateModel:")
