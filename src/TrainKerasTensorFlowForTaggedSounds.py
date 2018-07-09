@@ -170,7 +170,7 @@ def zeroPad(mfccLayers):
 for i in range(len(allInstrumentMfccData)):
     allInstrumentMfccData[i] = zeroPad(allInstrumentMfccData[i])
 
-# Binarize the labels (convert to numbers)
+# Binarize the labels (convert to 1-hot arrays from text labels/tags)
 labelBinarizer = LabelBinarizer()
 oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
 numInstruments = oneHotLabels.shape[1]
