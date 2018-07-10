@@ -221,9 +221,10 @@ conv2KernelSizeValues = [ 5 ]
 numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
 #numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32, numInstruments * 64, numInstruments * 128 ]
 
-conv1DropoutValues = [ 0 ] #, 0.1, 0.25, 0.33, 0.5 ]
-conv2DropoutValues = [ 0 ] # 0.1, 0.25, 0.33, 0.5 ]
-fullyConnectedDropoutValues = [ 0.5 ] # 0, 0.33,  0.1, 0.25, 0.5 
+# Settings here based on experiments (see results\ directory).
+conv1DropoutValues = [ 0 ]
+conv2DropoutValues = [ 0.25 ]
+fullyConnectedDropoutValues = [ 0.5 ] 
 
 def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32, conv1Dropout = 0, conv2Dropout = 0, fullyConnectedDropout = 0):
     print("TrainAndValidateModel:")
