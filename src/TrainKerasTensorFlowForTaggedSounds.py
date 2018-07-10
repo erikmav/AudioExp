@@ -242,8 +242,6 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(conv1Dropout),
 
-        # TODO: Experiment with BatchNormalization(axis=3)
-
         # Layer 2: Convolution over results from conv layer 1. This provides an integration over a wider time period,
         # using the features extracted from the first layer.
         Conv2D(numConv2Filters, conv2KernelSize, kernel_initializer='TruncatedNormal', activation='relu', padding='same'),
