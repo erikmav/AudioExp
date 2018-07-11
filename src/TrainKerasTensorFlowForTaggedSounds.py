@@ -216,8 +216,8 @@ numConv2FiltersValues = [ numInstruments * 2, numInstruments * 4, numInstruments
 conv2KernelSizeValues = [ 5 ]
 #conv2KernelSizeValues = [ 3, 5, (3,5), (5,3) ]
 
-# TODO: Experiment with this value - hence an array
-numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
+# Other values can be more optimal but setting this value based on experimentation.
+numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 16 ]
 #numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32, numInstruments * 64, numInstruments * 128 ]
 
 # Settings here based on experiments (see results\ directory).
@@ -241,8 +241,6 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         Conv2D(numConv1Filters, conv1KernelSize, kernel_initializer='TruncatedNormal', activation='relu', input_shape=(maxMfccRows, numMfccColumns, numMfccLayers), padding='same'),
         MaxPooling2D(pool_size=(2, 2)),
         Dropout(conv1Dropout),
-
-        # TODO: Experiment with BatchNormalization(axis=3)
 
         # Layer 2: Convolution over results from conv layer 1. This provides an integration over a wider time period,
         # using the features extracted from the first layer.
