@@ -217,8 +217,8 @@ numConv2FiltersValues = [ numInstruments * 2, numInstruments * 4, numInstruments
 conv2KernelSizeValues = [ 5 ]
 #conv2KernelSizeValues = [ 1, 3, 5, (3,5), (5,3) ]
 
-# TODO: Experiment with this value - hence an array
-numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
+# Other values can be more optimal but setting this value based on experimentation.
+numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 16 ]
 #numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 2, numInstruments * 3, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32, numInstruments * 64, numInstruments * 128 ]
 
 # Settings here based on experiments (see results\ directory).
