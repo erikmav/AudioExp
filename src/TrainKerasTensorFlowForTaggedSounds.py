@@ -199,10 +199,9 @@ print("Testing tensor shape:", numpy.shape(testMfccTensors))
 numConv1FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32 ]
 
 # For the first convolutional layer, the size of the kernel that implies the size of the filters.
-# TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
-# wider spans across MFCC ranges or wider spans across time.
+# Other values are valid but 5x5 seems pretty good based on experimentation.
 conv1KernelSizeValues = [ 5 ]
-#conv1KernelSizeValues = [ 1, 3, 5, 7, (3,5), (5,3), (2, numMfccColumns), (3, numMfccColumns), (4, numMfccColumns) ]
+#conv1KernelSizeValues = [ 3, 5, 7, (3,5), (5,3), (2, numMfccColumns), (3, numMfccColumns), (4, numMfccColumns) ]
 
 # For the second convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the results of the first conv layer.
@@ -215,7 +214,7 @@ numConv2FiltersValues = [ numInstruments * 2, numInstruments * 4, numInstruments
 # TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
 # wider spans across MFCC ranges or wider spans across time.
 conv2KernelSizeValues = [ 5 ]
-#conv2KernelSizeValues = [ 1, 3, 5, (3,5), (5,3) ]
+#conv2KernelSizeValues = [ 3, 5, (3,5), (5,3) ]
 
 # TODO: Experiment with this value - hence an array
 numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 4 ]
