@@ -195,8 +195,13 @@ print("Testing tensor shape:", numpy.shape(testMfccTensors))
 
 # For the first convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the input MFCCs.
-# TODO: Experiment with this value - hence an array
-numConv1FiltersValues = [ numInstruments, numInstruments * 2, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32 ]
+# Experimentation shows that high numbers of these produce the best results.
+numConv1FiltersValues = [ numInstruments * 32 ]
+
+# For the first convolutional layer, the size of the kernel that implies the size of the filters.
+# Other values are OK but 5x5 seems pretty good based on experimentation.
+conv1KernelSizeValues = [ 5 ]
+#conv1KernelSizeValues = [ 3, 5, 7, (3,5), (5,3), (2, numMfccColumns), (3, numMfccColumns), (4, numMfccColumns) ]
 
 # For the first convolutional layer, the size of the kernel that implies the size of the filters.
 # Other values are valid but 5x5 seems pretty good based on experimentation.
@@ -205,16 +210,15 @@ conv1KernelSizeValues = [ 5 ]
 
 # For the second convolutional layer, the number of convolutional filters
 # that are trained to find patterns amongst the results of the first conv layer.
-# From a tip at https://www.pyimagesearch.com/2018/04/16/keras-and-convolutional-neural-networks-cnns/ ,
-# we test with more filters here than in the conv1 layer.
-# TODO: Experiment with this value - hence an array
-numConv2FiltersValues = [ numInstruments * 2, numInstruments * 4, numInstruments * 8, numInstruments * 16, numInstruments * 32, numInstruments * 64 ]
+# A tip at https://www.pyimagesearch.com/2018/04/16/keras-and-convolutional-neural-networks-cnns/
+# recommends more filters here than in the conv1 layer.
+# Experimentation however showed good results with a higher number of conv1 filters and about half as many for conv2.
+numConv2FiltersValues = [ numInstruments * 16 ]
 
 # For the second convolutional layer, the size of the kernel that implies the size of the filters.
-# TODO: Experiment with this value - hence an array. Some entries are non-square to experiment with
-# wider spans across MFCC ranges or wider spans across time.
+# Experimentation showed 5x5 and 3x6 (3 rows by whole width) having good results. We keep 5x5 for now.
 conv2KernelSizeValues = [ 5 ]
-#conv2KernelSizeValues = [ 3, 5, (3,5), (5,3) ]
+#conv2KernelSizeValues = [ 3, 5, (3,5), (5,3), (3,6), (5,6), (7,6) ]
 
 # Other values can be more optimal but setting this value based on experimentation.
 numFullyConnectedPerceptronsLastLayerValues = [ numInstruments * 16 ]
@@ -267,8 +271,6 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         loss = 'categorical_crossentropy',
         metrics = [ 'accuracy' ])
 
-    # TODO: Experiment with epochs (or move to dynamic epochs by epsilon gain)
-    # TODO: Experiment with batch size
     history = model.fit(mfccTensors, instrumentOneHotLabels, epochs=epochs, batch_size=batchSize)
 
     score = model.evaluate(testMfccTensors, testInstrumentOneHotLabels, batch_size=batchSize)
