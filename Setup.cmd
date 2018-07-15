@@ -17,9 +17,11 @@ echo   TensorFlow - Machine learning system.
 echo   Keras - Machine learning wrapper on TensorFlow.
 echo   sklearn - SciKit-Learn toolset, additional utilities for machine
 echo     learning
+echo   pyaudio - Microphone input and other audio tech.
+echo   matplotlib - numpy plotting
 echo ==========================================================================
 echo.
-call pip3 install python_speech_features pylint numpy tensorflow keras sklearn
+call pip3 install python_speech_features pylint numpy tensorflow keras sklearn pyaudio matplotlib
 if ERRORLEVEL 1 echo ERROR: pip3 install failed with errorlevel %ERRORLEVEL% && exit /b 1
 
 echo.

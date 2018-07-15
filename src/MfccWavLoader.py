@@ -24,6 +24,7 @@ class MfccWavLoader:
         (rateHz, samples) = wav.read(wavPath)
         print("Loaded", wavPath, rateHz, "Hz")
         self.rateHz = rateHz
+        self.samples = samples
 
         # Calculate the MFCC features. https://github.com/jameslyons/python_speech_features#mfcc-features
         # We keep the defaults: 25ms frame window, 10ms step length, 13 cepstral coefficients calculated,
@@ -77,7 +78,8 @@ class MfccWavLoader:
             self.fullFeatureArray = numpy.stack(toStack, axis=-1)
 
     def writeFullFeatureArrayToCsvStream(self, outStream):
-        numpy.savetxt(sys.stdout, self.fullFeatureArray, delimiter=',', header=self.csvHeader, comments='')
+        twoDMatrix = self.fullFeatureArray[:,:,0]
+        numpy.savetxt(sys.stdout, twoDMatrix, delimiter=',', header=self.csvHeader, comments='')
 
     def normalizeMfccArray(self, mfccs):
         # Per http://www.cs.toronto.edu/%7Efritz/absps/waibelTDNN.pdf : Subtract from each coefficient
