@@ -15,7 +15,7 @@ plt.subplot(211)
 plt.plot(mfccLoader.samples)
 
 plt.subplot(212)
-twoDMatrix = mfccLoader.fullFeatureArray[:,:,0]
+twoDMatrix = mfccLoader.fullFeatureArray[:,:,0].T  # Transpose to get MFCCs on Y axis
 plt.matshow(twoDMatrix, fignum=False, cmap='bwr', aspect='auto')  # 'coolwarm' pretty good too
 
 plt.show()
