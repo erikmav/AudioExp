@@ -50,7 +50,7 @@ class MfccWavLoader:
         # energy column 0).
         # This is the same algorithm each frame of the MFCCs of an input sound stream
         # will need to use to match against these normalized values, producing far better results.
-        self.normalizeMfccArray(self.mfccFeatures)
+        MfccWavLoader.normalizeMfccArray(self.mfccFeatures)
 
         if produceLogFbank:
             # Calculate log-MFCC-filterbank features from the original samples.
@@ -81,7 +81,7 @@ class MfccWavLoader:
         twoDMatrix = self.fullFeatureArray[:,:,0]
         numpy.savetxt(sys.stdout, twoDMatrix, delimiter=',', header=self.csvHeader, comments='')
 
-    def normalizeMfccArray(self, mfccs):
+    def normalizeMfccArray(mfccs):
         # Per http://www.cs.toronto.edu/%7Efritz/absps/waibelTDNN.pdf : Subtract from each coefficient
         # the average coefficient energy computed over all frames, then normalize each coefficient
         # to lie in [-1, 1]. This is the same algorithm each frame of the MFCCs of an input sound stream

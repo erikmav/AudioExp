@@ -20,6 +20,7 @@ import numpy
 import random
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
+from SoundModelParams import SoundModelParams
 from SoundTagJsonReader import SoundTagJsonReader
 from StayAwake import preventComputerFromSleeping
 import sys
@@ -174,8 +175,11 @@ print("numMfccLayers:", numMfccLayers)
 # Binarize the labels (convert to 1-hot arrays from text labels/tags)
 labelBinarizer = LabelBinarizer()
 oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
+print(oneHotLabels)
 numInstruments = oneHotLabels.shape[1]
 Log("Num instruments:", numInstruments)
+print(labelBinarizer.classes_.shape)
+soundModelParams = SoundModelParams(maxMfccRows, labelBinarizer.classes_.tolist())
 
 # Partition the data into training and testing splits using 80% of
 # the data for training and the remaining 20% for testing.
@@ -229,7 +233,20 @@ conv1DropoutValues = [ 0 ]
 conv2DropoutValues = [ 0.25 ]
 fullyConnectedDropoutValues = [ 0.5 ] 
 
-def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, batchSize = 16, epochs = 32, conv1Dropout = 0, conv2Dropout = 0, fullyConnectedDropout = 0):
+# Saves the model to the file path (if specified). Returns a summary result.
+def TrainAndValidateModel(
+    numConv1Filters,
+    conv1KernelSize,
+    numConv2Filters,
+    conv2KernelSize,
+    numFullyConnectedPerceptronsLastLayer,
+    batchSize = 16,
+    epochs = 32,
+    conv1Dropout = 0,
+    conv2Dropout = 0,
+    fullyConnectedDropout = 0,
+    modelSavePath = None):
+    
     print("TrainAndValidateModel:")
     print("  numConv1Filters:", numConv1Filters)
     print("  conv1KernelSize:", conv1KernelSize)
@@ -294,16 +311,22 @@ def TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, con
         "fullyConnectedDropout": fullyConnectedDropout,
         "numInstruments": numInstruments,
         "numTrainingSamples": len(instrumentMfccData),
-        "numTestSamples": len(testInstrumentMfccData) 
-     }
+        "numTestSamples": len(testInstrumentMfccData),
+        "modelSavePath": modelSavePath
+    }
 
-    # Memory usage grows without bound. Attempt to mitigate with a deliberate dealloc of the model.
-    # TODO: Obviously when it's time to same the model for reuse instead of just experiment, we'll have to remove.
+    if not modelSavePath is None:
+        model.save(modelSavePath)
+        soundModelParams.save(modelSavePath + ".params.json")
+
+    # Memory usage grows without bound if we don't delete as we go.
     del model
 
     return result
 
 results = []
+
+saveModelToPath = "./Model.h5"
 
 preventComputerFromSleeping(True)
 try:
@@ -315,7 +338,7 @@ try:
                         for conv1Dropout in conv1DropoutValues:
                             for conv2Dropout in conv2DropoutValues:
                                 for fullyConnectedDropout in fullyConnectedDropoutValues:
-                                    result = TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, conv1Dropout=conv1Dropout, conv2Dropout=conv2Dropout, fullyConnectedDropout=fullyConnectedDropout)
+                                    result = TrainAndValidateModel(numConv1Filters, conv1KernelSize, numConv2Filters, conv2KernelSize, numFullyConnectedPerceptronsLastLayer, conv1Dropout=conv1Dropout, conv2Dropout=conv2Dropout, fullyConnectedDropout=fullyConnectedDropout, modelSavePath=saveModelToPath)
                                     Log(result)
                                     results.append(result)
 finally:

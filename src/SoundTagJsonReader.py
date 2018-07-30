@@ -11,8 +11,7 @@ class TaggedSound:
 class TaggedSoundData:
     """Top-level data type stored in TaggedSoundData.json"""
 
-    def __init__(self, folderPath):
-        self.FolderPath = folderPath
+    def __init__(self):
         self.Sounds = []
 
 class SoundTagJsonReader:
