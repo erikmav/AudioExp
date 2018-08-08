@@ -172,13 +172,12 @@ for i in range(len(allInstrumentMfccData)):
     allInstrumentMfccData[i], numMfccLayers, numMfccColumns = zeroPad(allInstrumentMfccData[i])
 print("numMfccLayers:", numMfccLayers)
 
-# Binarize the labels (convert to 1-hot arrays from text labels/tags)
+# Binarize the labels (convert to 1-hot arrays from text labels/tags).
+# Text labels for each array position in the classes_ list on the binarizer.
 labelBinarizer = LabelBinarizer()
 oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
-print(oneHotLabels)
 numInstruments = oneHotLabels.shape[1]
-Log("Num instruments:", numInstruments)
-print(labelBinarizer.classes_.shape)
+Log("Num instruments:", numInstruments, ":", labelBinarizer.classes_)
 soundModelParams = SoundModelParams(maxMfccRows, labelBinarizer.classes_.tolist())
 
 # Partition the data into training and testing splits using 80% of
