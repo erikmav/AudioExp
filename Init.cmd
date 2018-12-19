@@ -7,6 +7,8 @@ for /f %%n in ('git config user.name') do set __GitUserName=%%n
 @rem Remove spaces in case the user has used a full name instead of GitHub username.
 set __GitUserName=%__GitUserName: =%
 
+title AudioExp
+
 echo.
 echo ==========================================================================
 echo Ensuring a good editor in place for Git commits on the command line.
