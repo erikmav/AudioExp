@@ -1,4 +1,7 @@
 # PlotWav - Plots the wave amplitude (time domain) against the MFCCs.
+#
+# Usage:
+#   python PlotWav.py <wav-file-path>
 
 from MfccWavLoader import MfccWavLoader
 import matplotlib.pyplot as plt

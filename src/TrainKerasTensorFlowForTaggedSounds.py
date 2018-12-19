@@ -7,6 +7,12 @@
 # rows from a longer or continuous wav stream, performing recognition within
 # each overlapped window of MFCCs, predicting whether each instrument is at the
 # start of that window.
+#
+# Usage:
+#   python TrainKerasTensorFlowForTaggedSounds.py <sound-directory> [<results-file-path>]
+#
+#   sound-directory: Path to folder where wav files and TaggedSoundData.json reside.
+#   results-file-path: Optional path to output log file. Defaults to 'results.out' in the current directory.
 
 from datetime import datetime
 import glob
