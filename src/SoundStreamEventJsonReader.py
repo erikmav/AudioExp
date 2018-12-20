@@ -27,11 +27,12 @@ class SoundStreamEventJsonReader:
     {
         "SoundStreams": [
             {
-                "RelativePath": "beatbox_1.wav",
+                "RelativePath": "snare_*.wav",
                 "InstrumentEvents": [
                     {
                         "TimeSec": 1.0556,
-                        "InstrumentTags": [ "snare" ],
+                        "InstrumentTag": "snare",
+                        "Tags": [ ]
                     }
                 ]
             },

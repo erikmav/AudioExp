@@ -25,7 +25,7 @@ import os
 import numpy
 import random
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import MultiLabelBinarizer
 from SoundModelParams import SoundModelParams
 from SoundTagJsonReader import SoundTagJsonReader
 from StayAwake import preventComputerFromSleeping
@@ -139,7 +139,10 @@ maxMfccRows = 0
 minMfccRows = 100000000
 minWavHz = 10000000
 for soundData in soundTagJsonReader.data["Sounds"]:
+    # Add instrument label along with any additional tags into a list for multi-label binarizing.
     instrumentTag = soundData["InstrumentTag"]
+    additionalTagsList = soundData["Tags"] or []
+    allTags = [ instrumentTag ] + additionalTagsList
 
     fullGlob = os.path.join(soundTagJsonReader.folderPath, soundData["SoundRelativePath"])
     for soundPath in glob.glob(fullGlob):
@@ -153,7 +156,7 @@ for soundData in soundTagJsonReader.data["Sounds"]:
         minWavHz = min(minWavHz, mfccLoader.rateHz)
 
         allInstrumentMfccData.append(mfccLayers)
-        allInstrumentLabels.append(instrumentTag)
+        allInstrumentLabels.append(allTags)
 
 Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
 
@@ -180,7 +183,7 @@ print("numMfccLayers:", numMfccLayers)
 
 # Binarize the labels (convert to 1-hot arrays from text labels/tags).
 # Text labels for each array position in the classes_ list on the binarizer.
-labelBinarizer = LabelBinarizer()
+labelBinarizer = MultiLabelBinarizer()
 oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
 numInstruments = oneHotLabels.shape[1]
 Log("Num instruments:", numInstruments, ":", labelBinarizer.classes_)
@@ -188,8 +191,9 @@ soundModelParams = SoundModelParams(maxMfccRows, labelBinarizer.classes_.tolist(
 
 # Partition the data into training and testing splits using 80% of
 # the data for training and the remaining 20% for testing.
-(instrumentMfccData, testInstrumentMfccData, instrumentOneHotLabels, testInstrumentOneHotLabels) = train_test_split(allInstrumentMfccData,
-	oneHotLabels, test_size=0.2, random_state=42)
+# Non-random for repeatability.
+(instrumentMfccData, testInstrumentMfccData, instrumentOneHotLabels, testInstrumentOneHotLabels) = train_test_split(
+    allInstrumentMfccData, oneHotLabels, test_size=0.2, random_state=42)
 
 # Reformat the resulting lists of training and test data into a 4D tensor
 # required by the Conv2D Keras layers. This is "channels_last" format,
