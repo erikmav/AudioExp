@@ -1,13 +1,29 @@
-from python_speech_features import mfcc
-from python_speech_features import delta
-from python_speech_features import logfbank
 import numpy
+from python_speech_features import delta, logfbank, mfcc
 import scipy.io.wavfile as wav
 import sys
 
+def calculate_nfft(samplerate, winlen):
+    """Calculates the FFT size as a power of two greater than or equal to
+    the number of samples in a single window length.
+    
+    Having an FFT less than the window length loses precision by dropping
+    many of the samples; a longer FFT than the window allows zero-padding
+    of the FFT buffer which is neutral in terms of frequency domain conversion.
+
+    :param samplerate: The sample rate of the signal we are working with, in Hz.
+    :param winlen: The length of the analysis window in seconds.
+    """
+    window_length_samples = winlen * samplerate
+    nfft = 1
+    while nfft < window_length_samples:
+        nfft *= 2
+    return nfft
+
 class MfccWavLoader:
     """
-    Loads a wav file and processes it, serving the resulting NumPy arrays for use
+    Loads a wav file and processes it into Mel-Frequency Cepstral Coefficients
+    and related numbers, serving the resulting NumPy arrays for use
     in matching or training.
     """
 
@@ -26,16 +42,27 @@ class MfccWavLoader:
         self.rateHz = rateHz
         self.samples = samples
 
+        # TODO: Look for newer python_speech_features package containing
+        # https://github.com/jameslyons/python_speech_features/pull/76 and
+        # https://github.com/jameslyons/python_speech_features/pull/77
+        # Once that is available, remove this nfft variable and calculat_nfft()
+        # and let the default None value to mfcc() use the same code in python_speech_features.
+        frameWindowSec = 0.025  # 25 ms
+        windowStepLengthSec = 0.01  # 10 ms
+        nfft = calculate_nfft(rateHz, frameWindowSec)
+
         # Calculate the MFCC features. https://github.com/jameslyons/python_speech_features#mfcc-features
-        # We keep the defaults: 25ms frame window, 10ms step length, 13 cepstral coefficients calculated,
-        # 26 filters in the MFCC filterbank, 512-sample FFT calculation size, 0 Hz low frequency,
-        # rateHz/2 high frequency, 0.97 pre-emphasis filter, 22 lifter on final cepstral coefficients.
+        # We keep many defaults: 13 cepstral coefficients calculated, 26 filters in the MFCC
+        # filterbank, 0 Hz low frequency, rateHz/2 high frequency, 0.97 pre-emphasis filter,
+        # 22 lifter on final cepstral coefficients.
+        #
         # We avoid the appendEnergy parameter to ensure our use of convolutional filters over the 2D array
         # of MFCCs across time can find patterns in comparably scaled numbers.
+        #
         # We get back a NumPy array of 13 cepstral coefficients per row by a number of rows matching
         # the number of windows across the steps in the wave samples. We drop the first column per
         # common implementations of MFCC machine learning.
-        self.mfccFeatures = mfcc(samples, rateHz, highfreq=mfccMaxRangeHz)[:,1:13]
+        self.mfccFeatures = mfcc(samples, rateHz, winlen=frameWindowSec, winstep=windowStepLengthSec, nfft=nfft, highfreq=mfccMaxRangeHz)[:,1:13]
 
         if produceFirstDerivative:
             # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
