@@ -45,7 +45,7 @@ class MfccWavLoader:
         # TODO: Look for newer python_speech_features package containing
         # https://github.com/jameslyons/python_speech_features/pull/76 and
         # https://github.com/jameslyons/python_speech_features/pull/77
-        # Once that is available, remove this nfft variable and calculat_nfft()
+        # Once that is available, remove this nfft variable and calculate_nfft()
         # and let the default None value to mfcc() use the same code in python_speech_features.
         frameWindowSec = 0.025  # 25 ms
         windowStepLengthSec = 0.01  # 10 ms
