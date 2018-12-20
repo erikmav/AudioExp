@@ -14,6 +14,7 @@
 #   sound-directory: Path to folder where wav files and TaggedSoundData.json reside.
 #   results-file-path: Optional path to output log file. Defaults to 'results.out' in the current directory.
 
+import collections
 from datetime import datetime
 import glob
 from keras.layers import Activation, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
@@ -132,6 +133,8 @@ soundTagJsonReader = SoundTagJsonReader(soundTagFileName)
 wavMinAllowedHz = 44100
 mfccMaxRangeHz = wavMinAllowedHz / 2
 
+mfccLenToSamplesMap = {}
+
 # We need the number of instruments for various calculations.
 currentIndex = 0
 allInstrumentMfccData = []
@@ -159,7 +162,16 @@ for soundData in soundTagJsonReader.data["Sounds"]:
         allInstrumentMfccData.append(mfccLayers)
         allInstrumentLabels.append(allTags)
 
+        sampleList = mfccLenToSamplesMap.get(numMfccRows)
+        if sampleList is None:
+            sampleList = []
+            mfccLenToSamplesMap[numMfccRows] = sampleList
+        sampleList.append(mfccLoader)
+
 Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
+Log("Number of instruments by length in MFCC rows:")
+for k, v in sorted(mfccLenToSamplesMap.items()):
+    Log("  ", k, ": ", len(v))
 
 if minWavHz < wavMinAllowedHz:
     print("ERROR: One or more wav files found with rate in Hz less than configured minimum. Min found:", minWavHz, " allowed min:", wavMinAllowedHz)
