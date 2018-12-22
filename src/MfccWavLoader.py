@@ -76,7 +76,7 @@ class MfccWavLoader:
         # Now that we're done with derivatives, normalize the original MFCC coefficients.
         # This is the same algorithm each frame of the MFCCs of an input sound stream
         # will need to use to match against these normalized values, producing far better results.
-        MfccWavLoader.normalizeMfccArray(self.mfccFeatures)
+        normalizeMfccArray(self.mfccFeatures)
 
         if produceLogFbank:
             # Calculate log-MFCC-filterbank features from the original samples.
