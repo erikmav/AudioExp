@@ -73,20 +73,19 @@ class MfccWavLoader:
                 # Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas. 13 columns.
                 self.mfccDeltaDeltas = delta(self.mfccDeltas, 2)
 
-        # Now that we're done with derivatives, normalize the original MFCC coefficients (but not the
-        # energy column 0).
+        # Now that we're done with derivatives, normalize the original MFCC coefficients.
         # This is the same algorithm each frame of the MFCCs of an input sound stream
         # will need to use to match against these normalized values, producing far better results.
         MfccWavLoader.normalizeMfccArray(self.mfccFeatures)
 
         if produceLogFbank:
             # Calculate log-MFCC-filterbank features from the original samples.
-            # We keep the defaults: 25ms frame window, 10ms step length, 26 filters in the MFCC filterbank,
-            # 512-sample FFT calculation size, 0 Hz low frequency, rateHz/2 high frequency,
-            # 0.97 pre-emphasis filter, 22 lifter on final cepstral coefficients.
-            # We get back a NumPy array of 26 log(filterbank) entries. We keep the first 12 per the
-            # tutorial recommendation (later banks measure fast-changing harmonics in the high frequencies).
-            logFbankFeatures = logfbank(samples, rateHz)
+            # We keep many defaults: 26 filters in the MFCC filterbank, 0 Hz low frequency,
+            # rateHz/2 high frequency, 0.97 pre-emphasis filter, 22 lifter on final cepstral coefficients.
+            # We get back a NumPy array of 26 log(filterbank) entries. We keep skip the low coefficient
+            # and take the 2nd through 13th, as later banks measure fast-changing harmonics in the
+            # high frequencies.
+            logFbankFeatures = logfbank(samples, rateHz, frameWindowSec, windowStepLengthSec, nfft=nfft)
             self.logFbankFeatures = logFbankFeatures[:,1:13]
             self.fullFeatureArray = numpy.stack([ self.logFbankFeatures ], axis=-1)
             self.csvHeader = MfccWavLoader.logFbankHeader
