@@ -1,4 +1,4 @@
-from MfccWavLoader import MfccWavLoader
+from MfccWavLoader import MfccWavLoader, normalizeMfccArray
 import numpy
 from SoundModelParams import SoundModelParams
 from SoundStreamEventJsonReader import SoundStreamEventJsonReader
@@ -37,7 +37,7 @@ class SoundStreamAnalyzer:
         currentRow = 0
         while currentRow < numWindows:
             analysisArray = mfccs[currentRow : currentRow + windowRows, :]
-            MfccWavLoader.normalizeMfccArray(analysisArray)
+            normalizeMfccArray(analysisArray)
 
             # Input to model needs to be an array of samples to match (1), each with
             # 3 dimensions (rows, columns, layers=1).

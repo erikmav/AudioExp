@@ -107,11 +107,11 @@ class MfccWavLoader:
         twoDMatrix = self.fullFeatureArray[:,:,0]
         numpy.savetxt(sys.stdout, twoDMatrix, delimiter=',', header=self.csvHeader, comments='')
 
-    def normalizeMfccArray(mfccs):
-        # Per http://www.cs.toronto.edu/%7Efritz/absps/waibelTDNN.pdf : Subtract from each coefficient
-        # the average coefficient energy computed over all frames, then normalize each coefficient
-        # to lie in [-1, 1]. This is the same algorithm each frame of the MFCCs of an input sound stream
-        # will need to run to match against these normalized values, and produces far better results.
-        avg = numpy.average(mfccs)
-        numpy.subtract(mfccs, avg)
-        mfccs /= numpy.max(numpy.abs(mfccs))
+def normalizeMfccArray(mfccs):
+    # Per http://www.cs.toronto.edu/%7Efritz/absps/waibelTDNN.pdf : Subtract from each coefficient
+    # the average coefficient energy computed over all frames, then normalize each coefficient
+    # to lie in [-1, 1]. This is the same algorithm each frame of the MFCCs of an input sound stream
+    # will need to run to match against these normalized values, and produces far better results.
+    avg = numpy.average(mfccs)
+    numpy.subtract(mfccs, avg)
+    mfccs /= numpy.max(numpy.abs(mfccs))
