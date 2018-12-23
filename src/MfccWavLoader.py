@@ -118,20 +118,21 @@ class MfccWavLoader:
         baseFileName, _ = path.splitext(fileName)
 
         # Sounds with base filenames ending in "-x.yyy" generate one additional sample
-        # at each (step length seconds) after x.yyy seconds into the full sample.
+        # at each (step length seconds / 2) after x.yyy seconds into the full sample.
         # This allows easier handling for samples where the prefix before x.yyy
         # is the most important part of the sample but we can get more data at more
         # sample lengths using successive portions of the tail.
         match = self.stepSuffixRegex.match(baseFileName)
         if match:
             beginTimeCode = float(match.group(1))
-            samplesPerStep = rateHz * windowStepLengthSec
+            samplesPerStep = rateHz * (windowStepLengthSec / 2)
             beginSample = beginTimeCode * rateHz
             currentEndSample = samples.shape[0] - samplesPerStep  # Full array was emitted above.
             while currentEndSample >= beginSample:
                 nextWav = MfccWav(self.wavPath, samples[0:int(currentEndSample)], rateHz, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
                 if numpy.array_equal(nextWav.mfccFeatures, lastWav.mfccFeatures):  # Depending on alignments we could generate the same MFCCs
                     print('Dropped part of', fileName, 'as being equal to previous in MFCCs')
+                else:
                     yield nextWav
                 lastWav = nextWav
                 currentEndSample -= samplesPerStep
