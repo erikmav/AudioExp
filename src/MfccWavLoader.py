@@ -110,17 +110,18 @@ class MfccWavLoader:
         print("Loaded", self.wavPath, rateHz, "Hz")
 
         # Yield the full set of samples as the first output.
-        yield MfccWav(self.wavPath, samples, rateHz, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
+        lastWav = MfccWav(self.wavPath, samples, rateHz, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
+        yield lastWav
 
         # Generate subsets from special filename formats.
         fileName = path.basename(self.wavPath)
         baseFileName, _ = path.splitext(fileName)
 
         # Sounds with base filenames ending in "-x.yyy" generate one additional sample
-        # at each step length seconds after x.yyy seconds into the full sample.
+        # at each (step length seconds) after x.yyy seconds into the full sample.
         # This allows easier handling for samples where the prefix before x.yyy
-        # is the most important but we can get more data at more sample lengths
-        # using successive portions of the tail.
+        # is the most important part of the sample but we can get more data at more
+        # sample lengths using successive portions of the tail.
         match = self.stepSuffixRegex.match(baseFileName)
         if match:
             beginTimeCode = float(match.group(1))
@@ -128,7 +129,11 @@ class MfccWavLoader:
             beginSample = beginTimeCode * rateHz
             currentEndSample = samples.shape[0] - samplesPerStep  # Full array was emitted above.
             while currentEndSample >= beginSample:
-                yield MfccWav(self.wavPath, samples[0:int(currentEndSample)], rateHz, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
+                nextWav = MfccWav(self.wavPath, samples[0:int(currentEndSample)], rateHz, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
+                if numpy.array_equal(nextWav.mfccFeatures, lastWav.mfccFeatures):  # Depending on alignments we could generate the same MFCCs
+                    print('Dropped part of', fileName, 'as being equal to previous in MFCCs')
+                    yield nextWav
+                lastWav = nextWav
                 currentEndSample -= samplesPerStep
 
 def normalizeMfccArray(mfccs):
