@@ -20,7 +20,8 @@ class SoundStreamAnalyzer:
         self.modelParams = modelParams
         self.minDetectionCertainty = minDetectionCertainty
 
-        self.mfccs = MfccWavLoader(wavFilePath).fullFeatureArray
+        mfccLoader = MfccWavLoader(wavFilePath)
+        self.mfccs = mfccLoader.generateMfccs().send().fullFeatureArray
         shape = numpy.shape(self.mfccs)
         print("Loaded", wavFilePath, "producing", shape[0], "rows; full shape", shape)
 

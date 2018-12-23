@@ -13,13 +13,14 @@ if len(sys.argv) < 2:
     exit(1)
 
 mfccLoader = MfccWavLoader(sys.argv[1])
+mfccWav = mfccLoader.generateMfccs().send()
 
 plt.subplot(211)
 plt.margins(0)
-plt.plot(mfccLoader.samples)
+plt.plot(mfccWav.samples)
 
 plt.subplot(212)
-twoDMatrix = mfccLoader.fullFeatureArray[:,:,0].T  # Transpose to get MFCCs on Y axis
+twoDMatrix = mfccWav.fullFeatureArray[:,:,0].T  # Transpose to get MFCCs on Y axis
 plt.matshow(twoDMatrix, fignum=False, cmap='bwr', aspect='auto')  # cmap='coolwarm' pretty good too
 
 plt.show()

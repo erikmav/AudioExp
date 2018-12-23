@@ -151,22 +151,23 @@ for soundData in soundTagJsonReader.data["Sounds"]:
     fullGlob = os.path.join(soundTagJsonReader.folderPath, soundData["SoundRelativePath"])
     for soundPath in glob.glob(fullGlob):
         mfccLoader = MfccWavLoader(soundPath, mfccMaxRangeHz)
-        mfccLayers = mfccLoader.fullFeatureArray
-        shape = numpy.shape(mfccLayers)
-        numMfccRows = shape[0]
-        print(soundPath, "shape", shape)
-        maxMfccRows = max(maxMfccRows, numMfccRows)
-        minMfccRows = min(minMfccRows, numMfccRows)
-        minWavHz = min(minWavHz, mfccLoader.rateHz)
+        for mfccWav in mfccLoader.generateMfccs():
+            mfccLayers = mfccWav.fullFeatureArray
+            shape = numpy.shape(mfccLayers)
+            numMfccRows = shape[0]
+            print(soundPath, "shape", shape)
+            maxMfccRows = max(maxMfccRows, numMfccRows)
+            minMfccRows = min(minMfccRows, numMfccRows)
+            minWavHz = min(minWavHz, mfccWav.rateHz)
 
-        allInstrumentMfccData.append(mfccLayers)
-        allInstrumentLabels.append(allTags)
+            allInstrumentMfccData.append(mfccLayers)
+            allInstrumentLabels.append(allTags)
 
-        sampleList = mfccLenToSamplesMap.get(numMfccRows)
-        if sampleList is None:
-            sampleList = []
-            mfccLenToSamplesMap[numMfccRows] = sampleList
-        sampleList.append(mfccLoader)
+            sampleList = mfccLenToSamplesMap.get(numMfccRows)
+            if sampleList is None:
+                sampleList = []
+                mfccLenToSamplesMap[numMfccRows] = sampleList
+            sampleList.append(mfccWav)
 
 Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
 Log("Number of instruments by length in MFCC rows:")
