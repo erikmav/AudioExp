@@ -172,7 +172,10 @@ for soundData in soundTagJsonReader.data["Sounds"]:
 Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
 Log("Number of instruments by length in MFCC rows:")
 for k, v in sorted(mfccLenToSamplesMap.items()):
-    Log("  ", k, ": ", len(v))
+    suffix = ''
+    if len(v) == 1:
+        suffix = '(' + os.path.basename(v[0].wavPath) + ')'
+    Log("  ", k, ": ", len(v), suffix)
 
 if minWavHz < wavMinAllowedHz:
     print("ERROR: One or more wav files found with rate in Hz less than configured minimum. Min found:", minWavHz, " allowed min:", wavMinAllowedHz)
