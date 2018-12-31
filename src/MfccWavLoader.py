@@ -31,6 +31,7 @@ class MfccWav:
         # https://github.com/jameslyons/python_speech_features/pull/77
         # Once that is available, remove this nfft variable and calculate_nfft()
         # and let the default None value to mfcc() use the same code in python_speech_features.
+        # Package can be viewed at https://pypi.org/project/python_speech_features/#history
         nfft = calculate_nfft(rateHz, frameWindowSec)
 
         # Calculate the MFCC features. https://github.com/jameslyons/python_speech_features#mfcc-features
@@ -44,15 +45,16 @@ class MfccWav:
         # We get back a NumPy array of 13 cepstral coefficients per row by a number of rows matching
         # the number of windows across the steps in the wave samples. We drop the first column per
         # common implementations of MFCC machine learning for voice.
-        self.mfccFeatures = mfcc(samples, rateHz, winlen=frameWindowSec, winstep=windowStepLengthSec, nfft=nfft, highfreq=mfccMaxRangeHz)[:,1:13]
+        self.mfccFull = mfcc(samples, rateHz, winlen=frameWindowSec, winstep=windowStepLengthSec, nfft=nfft, highfreq=mfccMaxRangeHz)
+        self.mfccFeatures = self.mfccFull[:,1:13]
 
         if produceFirstDerivative:
             # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
-            # before and after the current row whose samples are averaged to get the delta. 13 columns.
+            # before and after the current row whose samples are averaged to get the delta.
             self.mfccDeltas = delta(self.mfccFeatures, 2)
 
             if produceSecondDerivative:
-                # Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas. 13 columns.
+                # Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas.
                 self.mfccDeltaDeltas = delta(self.mfccDeltas, 2)
 
         # Now that we're done with derivatives, normalize the original MFCC coefficients.
@@ -64,7 +66,7 @@ class MfccWav:
             # Calculate log-MFCC-filterbank features from the original samples.
             # We keep many defaults: 26 filters in the MFCC filterbank, 0 Hz low frequency,
             # rateHz/2 high frequency, 0.97 pre-emphasis filter, 22 lifter on final cepstral coefficients.
-            # We get back a NumPy array of 26 log(filterbank) entries. We keep skip the low coefficient
+            # We get back a NumPy array of 26 log(filterbank) entries. We skip the low coefficient
             # and take the 2nd through 13th, as later banks measure fast-changing harmonics in the
             # high frequencies.
             logFbankFeatures = logfbank(samples, rateHz, frameWindowSec, windowStepLengthSec, nfft=nfft)
@@ -95,7 +97,7 @@ class MfccWavLoader:
     depending on file metadata.
     """
 
-    stepSuffixRegex = re.compile('.*-(\d\.\d\d\d)$', re.IGNORECASE)
+    stepSuffixRegex = re.compile(r'.*-(\d\.\d\d\d)$', re.IGNORECASE)
 
     def __init__(self, wavPath, mfccMaxRangeHz=None, produceLogFbank=False, produceFirstDerivative=False, produceSecondDerivative=False):
         self.wavPath = wavPath

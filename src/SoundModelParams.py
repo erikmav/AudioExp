@@ -2,7 +2,7 @@ import json
 
 class SoundModelParams:
     """
-    Hyperparameters (or perhaps mega-hyperparameters or hyper-hyperparameters)
+    Hyperparameters, or perhaps mega-hyperparameters or hyper-hyperparameters,
     related to a trained MFCC model. Including:
 
     mfccRows: The window size of MFCC rows needed to run the model against.

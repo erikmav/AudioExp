@@ -17,6 +17,7 @@
 import collections
 from datetime import datetime
 import glob
+from InstrumentLoader import InstrumentLoader
 from keras.layers import Activation, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 from keras.models import Sequential
 import keras.optimizers
@@ -36,7 +37,7 @@ from TrainAndValidateModel import TrainAndValidateModel
 if len(sys.argv) < 2:
     print('First param must be a directory containing wav files and ' + SoundTagJsonReader.fileName)
     exit(1)
-soundTagFileName = sys.argv[1]
+samplesDirPath = sys.argv[1]
 
 # Avoid loss of experimental results during long runs
 resultFileName = "results.out"
@@ -124,8 +125,6 @@ Log("Start:", startDateTime)
 # - Training batch size
 # - Number of epochs
 
-soundTagJsonReader = SoundTagJsonReader(soundTagFileName)
-
 # To ensure that all wavs generate comparable MFCCs, we need to ensure the top end
 # of the MFCC bucketing range is consistent. The default MFCC generation takes
 # the wav's rateHz / 2. We have 44.1KHz and 48KHz samples so we set the max range
@@ -133,52 +132,18 @@ soundTagJsonReader = SoundTagJsonReader(soundTagFileName)
 wavMinAllowedHz = 44100
 mfccMaxRangeHz = wavMinAllowedHz / 2
 
-mfccLenToSamplesMap = {}
+instruments = InstrumentLoader(samplesDirPath, mfccMaxRangeHz)
 
-# We need the number of instruments for various calculations.
-currentIndex = 0
-allInstrumentMfccData = []
-allInstrumentLabels = []
-maxMfccRows = 0
-minMfccRows = 100000000
-minWavHz = 10000000
-for soundData in soundTagJsonReader.data["Sounds"]:
-    # Add instrument label along with any additional tags into a list for multi-label binarizing.
-    instrumentTag = soundData["InstrumentTag"]
-    additionalTagsList = soundData["Tags"] or []
-    allTags = [ instrumentTag ] + additionalTagsList
-
-    fullGlob = os.path.join(soundTagJsonReader.folderPath, soundData["SoundRelativePath"])
-    for soundPath in glob.glob(fullGlob):
-        mfccLoader = MfccWavLoader(soundPath, mfccMaxRangeHz)
-        for mfccWav in mfccLoader.generateMfccs():
-            mfccLayers = mfccWav.fullFeatureArray
-            shape = numpy.shape(mfccLayers)
-            numMfccRows = shape[0]
-            print(soundPath, "shape", shape)
-            maxMfccRows = max(maxMfccRows, numMfccRows)
-            minMfccRows = min(minMfccRows, numMfccRows)
-            minWavHz = min(minWavHz, mfccWav.rateHz)
-
-            allInstrumentMfccData.append(mfccLayers)
-            allInstrumentLabels.append(allTags)
-
-            sampleList = mfccLenToSamplesMap.get(numMfccRows)
-            if sampleList is None:
-                sampleList = []
-                mfccLenToSamplesMap[numMfccRows] = sampleList
-            sampleList.append(mfccWav)
-
-Log("Max, min MFCC rows across all instruments: ", maxMfccRows, minMfccRows)
+Log("Max, min MFCC rows across all instruments: ", instruments.maxMfccRows, instruments.minMfccRows)
 Log("Number of instruments by length in MFCC rows:")
-for k, v in sorted(mfccLenToSamplesMap.items()):
+for k, v in sorted(instruments.mfccLenToSamplesMap.items()):
     suffix = ''
     if len(v) == 1:
         suffix = '(' + os.path.basename(v[0].wavPath) + ')'
     Log("  ", k, ": ", len(v), suffix)
 
-if minWavHz < wavMinAllowedHz:
-    print("ERROR: One or more wav files found with rate in Hz less than configured minimum. Min found:", minWavHz, " allowed min:", wavMinAllowedHz)
+if instruments.minWavHz < wavMinAllowedHz:
+    print("ERROR: One or more wav files found with rate in Hz less than configured minimum. Min found:", instruments.minWavHz, " allowed min:", wavMinAllowedHz)
     exit(1)
 
 # Zero-pad all sounds to the max number of rows. Assumes layot of (rows, cols, channels) where channels
@@ -191,26 +156,27 @@ def zeroPad(mfccLayers):
     numMfccRows = shape[0]
     numMfccColumns = shape[1]
     numMfccLayers = shape[2]
-    if (numMfccRows < maxMfccRows):
-        mfccLayers = numpy.append(mfccLayers, numpy.zeros(((maxMfccRows - numMfccRows), numMfccColumns, numMfccLayers)), axis=0)
+    if (numMfccRows < instruments.maxMfccRows):
+        mfccLayers = numpy.append(mfccLayers, numpy.zeros(((instruments.maxMfccRows - numMfccRows), numMfccColumns, numMfccLayers)), axis=0)
     return (mfccLayers, numMfccLayers, numMfccColumns)
-for i in range(len(allInstrumentMfccData)):
-    allInstrumentMfccData[i], numMfccLayers, numMfccColumns = zeroPad(allInstrumentMfccData[i])
+for i in range(len(instruments.allInstrumentMfccData)):
+    instruments.allInstrumentMfccData[i], numMfccLayers, numMfccColumns = zeroPad(instruments.allInstrumentMfccData[i])
 print("numMfccLayers:", numMfccLayers)
+
 
 # Binarize the labels (convert to 1-hot arrays from text labels/tags).
 # Text labels for each array position in the classes_ list on the binarizer.
 labelBinarizer = MultiLabelBinarizer()
-oneHotLabels = labelBinarizer.fit_transform(allInstrumentLabels)
+oneHotLabels = labelBinarizer.fit_transform(instruments.allInstrumentLabels)
 numInstruments = oneHotLabels.shape[1]
 Log("Num instruments:", numInstruments, ":", labelBinarizer.classes_)
-soundModelParams = SoundModelParams(maxMfccRows, labelBinarizer.classes_.tolist())
+soundModelParams = SoundModelParams(instruments.maxMfccRows, labelBinarizer.classes_.tolist())
 
 # Partition the data into training and testing splits using 80% of
 # the data for training and the remaining 20% for testing.
 # Non-random for repeatability.
 (instrumentMfccData, testInstrumentMfccData, instrumentOneHotLabels, testInstrumentOneHotLabels) = train_test_split(
-    allInstrumentMfccData, oneHotLabels, test_size=0.2, random_state=42)
+    instruments.allInstrumentMfccData, oneHotLabels, test_size=0.2, random_state=42)
 
 # Reformat the resulting lists of training and test data into a 4D tensor
 # required by the Conv2D Keras layers. This is "channels_last" format,
