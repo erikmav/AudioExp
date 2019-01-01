@@ -1,3 +1,4 @@
+from InstrumentLoader import InstrumentLoader
 from MfccWavLoader import MfccWavLoader, normalizeMfccArray
 import numpy
 from SoundModelParams import SoundModelParams
@@ -5,21 +6,28 @@ from SoundStreamEventJsonReader import SoundStreamEventJsonReader
 
 class SoundStreamAnalyzer:
     """
-    Opens a wav file or microphone stream and runs a trained model searching
-    for instrument events. Implements a Generator (iterator, enumerator) pattern
-    for returning detected results.
+    Opens a wav file or microphone stream and searches for instrument events utilizing
+    available analysis tools including distance comparisons and trained models.
+    Implements a Generator (iterator, enumerator) pattern for returning detected results.
     """
 
-    def __init__(self, wavFilePath, trainedMfccModel, modelParams, minDetectionCertainty):
+    def __init__(self, wavFilePath, instruments, trainedMfccModel, modelParams, minDetectionCertainty):
         """
+        wavFilePath: The path to the input file to analyze.
+        instruments: An InstrumentLoader with all instruments loaded.
+        trainedMfccModel: Instance of a Keras trained model.
         modelParams: An instance of SoundModelParams.
         minDetectionCertainty: A value in the range [0, 1] for the minimum certainty
           of a match required from the detecetor.
         """
+        self.instruments = instruments
         self.model = trainedMfccModel
         self.modelParams = modelParams
         self.minDetectionCertainty = minDetectionCertainty
 
+        # TODO: Allow None value for wav path to open the primary microphone instead.
+        # Implies refactoring to allow streaming windows of max needed length into various
+        # detection algos.
         mfccLoader = MfccWavLoader(wavFilePath)
         self.mfccs = mfccLoader.generateMfccs().send().fullFeatureArray
         shape = numpy.shape(self.mfccs)

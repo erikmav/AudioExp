@@ -17,7 +17,7 @@
 import collections
 from datetime import datetime
 import glob
-from InstrumentLoader import InstrumentLoader
+from InstrumentLoader import InstrumentLoader, mfccMaxRangeHz, wavMinAllowedHz
 from keras.layers import Activation, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 from keras.models import Sequential
 import keras.optimizers
@@ -125,14 +125,7 @@ Log("Start:", startDateTime)
 # - Training batch size
 # - Number of epochs
 
-# To ensure that all wavs generate comparable MFCCs, we need to ensure the top end
-# of the MFCC bucketing range is consistent. The default MFCC generation takes
-# the wav's rateHz / 2. We have 44.1KHz and 48KHz samples so we set the max range
-# to half the min, and assert below that we're not loading samples with even lower rates.
-wavMinAllowedHz = 44100
-mfccMaxRangeHz = wavMinAllowedHz / 2
-
-instruments = InstrumentLoader(samplesDirPath, mfccMaxRangeHz)
+instruments = InstrumentLoader(samplesDirPath)
 
 Log("Max, min MFCC rows across all instruments: ", instruments.maxMfccRows, instruments.minMfccRows)
 Log("Number of instruments by length in MFCC rows:")

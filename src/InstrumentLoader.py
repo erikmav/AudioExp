@@ -4,6 +4,13 @@ import numpy
 import os
 from SoundTagJsonReader import SoundTagJsonReader
 
+# To ensure that all wavs generate comparable MFCCs, we need to ensure the top end
+# of the MFCC bucketing range is consistent. The default MFCC generation takes
+# the wav's rateHz / 2. We have 44.1KHz and 48KHz samples so we set the max range
+# to half the min, and assert below that we're not loading samples with even lower rates.
+wavMinAllowedHz = 44100
+mfccMaxRangeHz = wavMinAllowedHz / 2
+
 class InstrumentLoader:
     """
     Wraps loading WAV files referenced in a TaggedSoundData.json and directory structure
@@ -14,7 +21,7 @@ class InstrumentLoader:
     allInstrumentLabels = []
     mfccLenToSamplesMap = {}
 
-    def __init__(self, samplesDirPath, mfccMaxRangeHz):
+    def __init__(self, samplesDirPath):
         soundTagJsonReader = SoundTagJsonReader(samplesDirPath)
 
         self.maxMfccRows = 0
