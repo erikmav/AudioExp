@@ -1,6 +1,7 @@
 import json
 from InstrumentLoader import InstrumentLoader
 import keras.models
+from KerasTensorFlowAnalyzer import KerasTensorFlowAnalyzer
 import os
 from SoundStreamAnalyzer import SoundStreamAnalyzer
 import sys
@@ -18,8 +19,11 @@ instruments = InstrumentLoader(instrumentsFolderPath)
 
 trainedModel = keras.models.load_model(modelFilePath)
 
+# See SoundModelParams.py
 f = open(modelParamsPath)
 modelParams = json.load(f)
 
-analyzer = SoundStreamAnalyzer(wavFilePath, instruments, trainedModel, modelParams, 0.8)
+analyzers = [ KerasTensorFlowAnalyzer(trainedModel, modelParams)  ]
+
+analyzer = SoundStreamAnalyzer(wavFilePath, instruments, analyzers, 0.8)
 analyzer.getMatches()

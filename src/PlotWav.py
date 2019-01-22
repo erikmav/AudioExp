@@ -13,7 +13,7 @@ if len(sys.argv) < 2:
     exit(1)
 
 mfccLoader = MfccWavLoader(sys.argv[1])
-mfccWav = mfccLoader.generateMfccs().send()
+mfccWav = mfccLoader.generateMfccs().send(None)
 
 plt.subplot(211)
 plt.margins(0)

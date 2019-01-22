@@ -1,7 +1,6 @@
 from InstrumentLoader import InstrumentLoader
-from MfccWavLoader import MfccWavLoader, normalizeMfccArray
+from MfccWavLoader import MfccWavLoader, normalizeMfccArray, windowStepLengthSec
 import numpy
-from SoundModelParams import SoundModelParams
 from SoundStreamEventJsonReader import SoundStreamEventJsonReader
 
 class SoundStreamAnalyzer:
@@ -11,25 +10,31 @@ class SoundStreamAnalyzer:
     Implements a Generator (iterator, enumerator) pattern for returning detected results.
     """
 
-    def __init__(self, wavFilePath, instruments, trainedMfccModel, modelParams, minDetectionCertainty):
+    def __init__(self, wavFilePath, instruments, analyzers, minDetectionCertainty):
         """
         wavFilePath: The path to the input file to analyze.
         instruments: An InstrumentLoader with all instruments loaded.
-        trainedMfccModel: Instance of a Keras trained model.
-        modelParams: An instance of SoundModelParams.
+        analyzers: An array of AnalyzerBase derived class instances.
         minDetectionCertainty: A value in the range [0, 1] for the minimum certainty
           of a match required from the detecetor.
         """
         self.instruments = instruments
-        self.model = trainedMfccModel
-        self.modelParams = modelParams
         self.minDetectionCertainty = minDetectionCertainty
+
+        self.analyzers = analyzers
+        self.analyzersByLen = { }
+        for analyzer in analyzers:
+            len = analyzer.getWindowInMfccRows()
+            if len not in self.analyzersByLen:
+                self.analyzersByLen[len] = []
+            a = self.analyzersByLen[len]
+            a.append(analyzer)
 
         # TODO: Allow None value for wav path to open the primary microphone instead.
         # Implies refactoring to allow streaming windows of max needed length into various
         # detection algos.
         mfccLoader = MfccWavLoader(wavFilePath)
-        self.mfccs = mfccLoader.generateMfccs().send().fullFeatureArray
+        self.mfccs = mfccLoader.generateMfccs().send(None).fullFeatureArray
         shape = numpy.shape(self.mfccs)
         print("Loaded", wavFilePath, "producing", shape[0], "rows; full shape", shape)
 
@@ -38,23 +43,29 @@ class SoundStreamAnalyzer:
 
     def getMatchesForSamples(self, mfccs):
         shape = numpy.shape(mfccs)
-        windowRows = self.modelParams["mfccRows"]
-        labels = self.modelParams["instruments"]
-        print("Window length in MFCC rows", windowRows)
-        numWindows = shape[0] - windowRows + 1
+        labels = self.instruments.allInstrumentLabels
+
+        minAnalyzerRequiredMfccRows = min(self.analyzersByLen.keys())
+        print("Min analyzer window length in MFCC rows", minAnalyzerRequiredMfccRows)
+
+        numWindows = shape[0] - minAnalyzerRequiredMfccRows + 1
         print("numWindows", numWindows, shape)
-        currentRow = 0
-        while currentRow < numWindows:
-            analysisArray = mfccs[currentRow : currentRow + windowRows, :]
-            normalizeMfccArray(analysisArray)
 
-            # Input to model needs to be an array of samples to match (1), each with
-            # 3 dimensions (rows, columns, layers=1).
-            analysisArray = analysisArray[numpy.newaxis, ...]
+        for currentRow in range(numWindows):
+            for numMfccRows, analyzers in self.analyzersByLen.items():
+                if (currentRow + numMfccRows) >= shape[0]:
+                    # Analyzers need more samples than we have remaining in the tail.
+                    continue
 
-            predictions = self.model.predict(analysisArray, verbose=1)  # Predictions shape (1, numInstruments)
-            for i in range(predictions.shape[1]):
-                if predictions[0][i] >= self.minDetectionCertainty:
-                    print("Found", labels[i], "at MFCC row", currentRow)
+                analysisArray = mfccs[currentRow : currentRow + numMfccRows, :]
+                normalizeMfccArray(analysisArray)
 
-            currentRow += 1
+                # Input to analyzers needs to be an array of samples to match (1), each with
+                # 3 dimensions (rows, columns, layers=1).
+                analysisArray = analysisArray[numpy.newaxis, ...]
+
+                for analyzer in analyzers:
+                    predictions = analyzer.analyze(analysisArray)
+                    for i in range(predictions.shape[1]):
+                        if predictions[0][i] >= self.minDetectionCertainty:
+                            print("Found", labels[i], "at offset", windowStepLengthSec * currentRow, " sec (MFCC row", currentRow, "), from analyzer", analyzer.name())
