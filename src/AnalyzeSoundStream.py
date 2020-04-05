@@ -8,7 +8,7 @@ import sys
 
 if len(sys.argv) < 5:
     print('Usage:')
-    print('  <wav-file-path> <instruments-folder-path> <model-file-path> <model-params-json>')
+    print('  <wav-file-path> <instruments-folder-path> <model-file-path> <model-params-json-path>')
     exit(1)
 wavFilePath = sys.argv[1]
 instrumentsFolderPath = sys.argv[2]
