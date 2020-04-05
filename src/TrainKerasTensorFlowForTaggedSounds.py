@@ -139,7 +139,7 @@ if instruments.minWavHz < wavMinAllowedHz:
     print("ERROR: One or more wav files found with rate in Hz less than configured minimum. Min found:", instruments.minWavHz, " allowed min:", wavMinAllowedHz)
     exit(1)
 
-# Zero-pad all sounds to the max number of rows. Assumes layot of (rows, cols, channels) where channels
+# Zero-pad all sounds to the max number of rows. Assumes layout of (rows, cols, channels) where channels
 # can be just the MFCCs (dimension height of 1) or the MFCCs plus its derivatives (dimension height of 2 or more).
 # TODO: Or do we create multiple TDNNs trained at each row length?
 numMfccLayers = 1
@@ -157,8 +157,8 @@ for i in range(len(instruments.allInstrumentMfccData)):
 print("numMfccLayers:", numMfccLayers)
 
 
-# Binarize the labels (convert to 1-hot arrays from text labels/tags).
-# Text labels for each array position in the classes_ list on the binarizer.
+# Binarize the labels: Convert to a 1-hot array from text labels/tags.
+# Text labels for each array position are in the classes_ list on the binarizer.
 labelBinarizer = MultiLabelBinarizer()
 oneHotLabels = labelBinarizer.fit_transform(instruments.allInstrumentLabels)
 numInstruments = oneHotLabels.shape[1]
@@ -260,7 +260,7 @@ maxAccuracy = 0
 for result in results:
     print(result)
     loss = result["testdata_loss"]
-    accuracy = result["testdata_acc"]
+    accuracy = result["testdata_accuracy"]
     if loss < minLoss:
         minLoss = loss
         resultMinLoss = result
