@@ -7,7 +7,7 @@ import sys
 
 # python_speech_features defaults unless we find a different approach.
 frameWindowSec = 0.025  # 25 ms
-windowStepLengthSec = 0.01  # 10 ms
+windowStepLengthSec = 0.005  # 5 ms
 
 class MfccWav:
     """
@@ -48,19 +48,21 @@ class MfccWav:
         self.mfccFull = mfcc(samples, rateHz, winlen=frameWindowSec, winstep=windowStepLengthSec, nfft=nfft, highfreq=mfccMaxRangeHz)
         self.mfccFeatures = self.mfccFull[:,1:13]
 
+        # Normalize the MFCC coefficients.
+        # This is the same algorithm each frame of the MFCCs of an input sound stream
+        # will need to use to match against these normalized values, producing far better results.
+        normalizeMfccArray(self.mfccFeatures)
+
         if produceFirstDerivative:
             # Calculate the deltas (first derivative, velocity) as additional feature info. '2' is number of MFCC rows
             # before and after the current row whose samples are averaged to get the delta.
+            self.sampleDeltas = delta(samples, 31)
             self.mfccDeltas = delta(self.mfccFeatures, 2)
 
             if produceSecondDerivative:
                 # Also useful is the delta-delta (second derivative, acceleration) calculated on the deltas.
+                self.sampleDeltaDeltas = delta(self.sampleDeltas, 2)
                 self.mfccDeltaDeltas = delta(self.mfccDeltas, 2)
-
-        # Now that we're done with derivatives, normalize the original MFCC coefficients.
-        # This is the same algorithm each frame of the MFCCs of an input sound stream
-        # will need to use to match against these normalized values, producing far better results.
-        normalizeMfccArray(self.mfccFeatures)
 
         if produceLogFbank:
             # Calculate log-MFCC-filterbank features from the original samples.
