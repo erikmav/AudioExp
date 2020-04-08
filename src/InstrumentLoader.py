@@ -40,7 +40,7 @@ class InstrumentLoader:
                     mfccLayers = mfccWav.fullFeatureArray
                     shape = numpy.shape(mfccLayers)
                     numMfccRows = shape[0]
-                    print(soundPath, "shape", shape)
+                    # print(soundPath, "shape", shape)
                     self.maxMfccRows = max(self.maxMfccRows, numMfccRows)
                     self.minMfccRows = min(self.minMfccRows, numMfccRows)
                     self.minWavHz = min(self.minWavHz, mfccWav.rateHz)

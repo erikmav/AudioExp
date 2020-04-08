@@ -123,7 +123,6 @@ Log("Start:", startDateTime)
 # - MFCC intervals in a sliding window presented to the neural network: 3, 4, 5
 #   (i.e. 15ms up to 125ms when multiplied by the time intervals).
 # - Training batch size
-# - Number of epochs
 
 instruments = InstrumentLoader(samplesDirPath)
 

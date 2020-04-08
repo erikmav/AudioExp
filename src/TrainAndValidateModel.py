@@ -18,7 +18,7 @@ def TrainAndValidateModel(
     numFullyConnectedPerceptronsLastLayer,
     numInstruments,
     batchSize = 16,
-    epochs = 32,
+    epochs = 8,
     conv1Dropout = 0,
     conv2Dropout = 0,
     fullyConnectedDropout = 0,

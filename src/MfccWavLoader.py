@@ -5,9 +5,8 @@ import re
 import scipy.io.wavfile as wav
 import sys
 
-# python_speech_features defaults unless we find a different approach.
-frameWindowSec = 0.025  # 25 ms
-windowStepLengthSec = 0.005  # 5 ms
+frameWindowSec = 0.02  # 50 ms
+windowStepLengthSec = 0.01  # 25 ms
 
 class MfccWav:
     """
