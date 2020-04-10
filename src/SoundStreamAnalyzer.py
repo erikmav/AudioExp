@@ -2,6 +2,7 @@ from InstrumentLoader import InstrumentLoader
 from MfccWavLoader import MfccWavLoader, normalizeMfccArray, windowStepLengthSec
 import numpy
 from SoundStreamEventJsonReader import SoundStreamEventJsonReader
+from StayAwake import preventComputerFromSleeping
 
 class SoundStreamAnalyzer:
     """
@@ -42,35 +43,43 @@ class SoundStreamAnalyzer:
         return self.getMatchesForSamples(self.mfccs)
 
     def getMatchesForSamples(self, mfccs):
-        shape = numpy.shape(mfccs)
-        labels = self.instruments.allInstrumentLabels
+        preventComputerFromSleeping(True)
+        try:
+            shape = numpy.shape(mfccs)
+            labels = self.instruments.orderedResultInstrumentLabels
 
-        minAnalyzerRequiredMfccRows = min(self.analyzersByLen.keys())
-        print("Min analyzer window length in MFCC rows", minAnalyzerRequiredMfccRows)
+            minAnalyzerRequiredMfccRows = min(self.analyzersByLen.keys())
+            print("Min analyzer window length in MFCC rows", minAnalyzerRequiredMfccRows)
 
-        numWindows = shape[0] - minAnalyzerRequiredMfccRows + 1
-        print("numWindows", numWindows, shape)
+            numWindows = shape[0] - minAnalyzerRequiredMfccRows + 1
+            print("numWindows", numWindows, shape)
 
-        for currentRow in range(numWindows):
-            #if (1 + int(currentRow % 10) == 0):
-            print("Row", currentRow)
+            for currentRow in range(numWindows):
+                if int(currentRow % 10) == 0:
+                    print("Row", currentRow)
+                tagsFound = {}
 
-            for numMfccRows, analyzers in self.analyzersByLen.items():
-                if (currentRow + numMfccRows) >= shape[0]:
-                    # Analyzers need more samples than we have remaining in the tail.
-                    continue
+                for numMfccRows, analyzers in self.analyzersByLen.items():
+                    if (currentRow + numMfccRows) >= shape[0]:
+                        # Analyzers need more samples than we have remaining in the tail.
+                        continue
 
-                analysisArray = mfccs[currentRow : currentRow + numMfccRows, :]
-                normalizeMfccArray(analysisArray)
+                    analysisArray = mfccs[currentRow : currentRow + numMfccRows, :]
+                    normalizeMfccArray(analysisArray)
 
-                # Input to analyzers needs to be an array of samples to match (1), each with
-                # 3 dimensions (rows, columns, layers=1).
-                analysisArray = analysisArray[numpy.newaxis, ...]
+                    # Input to analyzers needs to be an array of samples to match (1), each with
+                    # 3 dimensions (rows, columns, layers=1).
+                    analysisArray = analysisArray[numpy.newaxis, ...]
 
-                for analyzer in analyzers:
-                    # Predictions shape (1, numInstruments)
-                    predictions = analyzer.analyze(analysisArray)
-                    for i in range(predictions.shape[1]):
-                        if predictions[0][i] >= self.minDetectionCertainty:
-                            print("Found", labels[i], "at offset", windowStepLengthSec * currentRow, " sec (MFCC row", currentRow, "), from analyzer", analyzer.name())
+                    for analyzer in analyzers:
+                        # Predictions shape (1, numInstruments)
+                        predictions = analyzer.analyze(analysisArray)
+                        for i in range(predictions.shape[1]):
+                            if predictions[0][i] >= self.minDetectionCertainty:
+                                tagsFound[labels[i]] = True
+                    
+                if len(tagsFound) > 0:
+                    print("Found", tagsFound.keys(), "at offset", windowStepLengthSec * currentRow, " sec (MFCC row", currentRow, ")")
 
+        finally:
+            preventComputerFromSleeping(False)

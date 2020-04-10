@@ -16,13 +16,15 @@ instrumentsFolderPath = sys.argv[2]
 modelFilePath = sys.argv[3]
 modelParamsPath = sys.argv[4]
 
-instruments = InstrumentLoader(instrumentsFolderPath)
-
 trainedModel = keras.models.load_model(modelFilePath)
 
 # See SoundModelParams.py
 f = open(modelParamsPath)
 modelParams = json.load(f)
+orderedResultInstrumentLabels = modelParams["instruments"]
+print("Ordered labels:", orderedResultInstrumentLabels)
+
+instruments = InstrumentLoader(instrumentsFolderPath, orderedResultInstrumentLabels)
 
 analyzers = [ KerasTensorFlowAnalyzer(trainedModel, modelParams) ] + list(MfccComparisonAnalyzer.constructFromInstruments(instruments))
 

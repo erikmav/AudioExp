@@ -15,5 +15,5 @@ class KerasTensorFlowAnalyzer(AnalyzerBase):
         return self.modelParams["mfccRows"]
 
     def analyze(self, mfccRows):
-        predictions = self.model.predict(mfccRows, verbose=1)  # Predictions shape (1, numInstruments)
+        predictions = self.model.predict(mfccRows)  # Predictions shape (1, numInstruments)
         return predictions

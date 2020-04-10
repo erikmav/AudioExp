@@ -9,7 +9,8 @@ class SoundModelParams:
       The window must be normalized with MfccWav.normalizeMfccArray().
 
     instrumentsArray: An ordered array of instrument/tag names corresponding
-      to the one-hot array generated during loading of instrument samples.
+      to the one-hot array generated during loading of instrument samples
+      into the Keras model.
     """
 
     def __init__(self, mfccRows, instrumentsArray):

@@ -18,11 +18,14 @@ class InstrumentLoader:
     """
 
     allInstrumentMfccWavs = []
-    allInstrumentMfccData = []
     allInstrumentLabels = []
     mfccLenToSamplesMap = {}
+    instrumentNameToResultIndexMap = {}
 
-    def __init__(self, samplesDirPath):
+    def __init__(self, samplesDirPath, orderedResultInstrumentLabels):
+        self.orderedResultInstrumentLabels = orderedResultInstrumentLabels
+        for i in range(len(orderedResultInstrumentLabels)):
+            self.instrumentNameToResultIndexMap[orderedResultInstrumentLabels[i]] = i
         soundTagJsonReader = SoundTagJsonReader(samplesDirPath)
 
         self.maxMfccRows = 0
@@ -45,7 +48,6 @@ class InstrumentLoader:
                     self.minWavHz = min(self.minWavHz, mfccWav.rateHz)
 
                     self.allInstrumentMfccWavs.append(mfccWav)
-                    self.allInstrumentMfccData.append(mfccWav.fullFeatureArray)
                     self.allInstrumentLabels.append(allTags)
 
                     sampleList = self.mfccLenToSamplesMap.get(numMfccRows)

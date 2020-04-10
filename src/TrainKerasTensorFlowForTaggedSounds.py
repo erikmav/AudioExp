@@ -124,7 +124,7 @@ Log("Start:", startDateTime)
 #   (i.e. 15ms up to 125ms when multiplied by the time intervals).
 # - Training batch size
 
-instruments = InstrumentLoader(samplesDirPath)
+instruments = InstrumentLoader(samplesDirPath, [])
 
 Log("Max, min MFCC rows across all instruments: ", instruments.maxMfccRows, instruments.minMfccRows)
 Log("Number of instruments by length in MFCC rows:")
@@ -151,10 +151,10 @@ def zeroPad(mfccLayers):
     if (numMfccRows < instruments.maxMfccRows):
         mfccLayers = numpy.append(mfccLayers, numpy.zeros(((instruments.maxMfccRows - numMfccRows), numMfccColumns, numMfccLayers)), axis=0)
     return (mfccLayers, numMfccLayers, numMfccColumns)
-for i in range(len(instruments.allInstrumentMfccData)):
-    instruments.allInstrumentMfccData[i], numMfccLayers, numMfccColumns = zeroPad(instruments.allInstrumentMfccData[i])
-print("numMfccLayers:", numMfccLayers)
-
+allInstrumentMfccData = []
+for i in range(len(instruments.allInstrumentMfccWavs)):
+    zeroPaddedMfccData, numMfccLayers, numMfccColumns = zeroPad(instruments.allInstrumentMfccWavs[i].fullFeatureArray)
+    allInstrumentMfccData.append(zeroPaddedMfccData)
 
 # Binarize the labels: Convert to a 1-hot array from text labels/tags.
 # Text labels for each array position are in the classes_ list on the binarizer.
@@ -168,7 +168,7 @@ soundModelParams = SoundModelParams(instruments.maxMfccRows, labelBinarizer.clas
 # the data for training and the remaining 20% for testing.
 # Non-random for repeatability.
 (instrumentMfccData, testInstrumentMfccData, instrumentOneHotLabels, testInstrumentOneHotLabels) = train_test_split(
-    instruments.allInstrumentMfccData, oneHotLabels, test_size=0.2, random_state=42)
+    allInstrumentMfccData, oneHotLabels, test_size=0.2, random_state=42)
 
 # Reformat the resulting lists of training and test data into a 4D tensor
 # required by the Conv2D Keras layers. This is "channels_last" format,
