@@ -19,10 +19,12 @@ class MfccWav:
     mfccDerivativeHeader = 'mfccd2,mfccd3,mfccd4,mfccd5,mfccd6,mfccd7,mfccd8,mfccd9,mfccd10,mfccd11,mfccd12,mfccd13'
     mfcc2ndDerivativeHeader = 'mfcc2d2,mfcc2d3,mfcc2d4,mfcc2d5,mfcc2d6,mfcc2d7,mfcc2d8,mfcc2d9,mfcc2d10,mfcc2d11,mfcc2d12,mfcc2d13'
 
-    def __init__(self, wavPath, samples, rateHz, mfccMaxRangeHz, produceLogFbank, produceFirstDerivative, produceSecondDerivative):
+    def __init__(self, wavPath, samples, rateHz, instrumentTag, tags, mfccMaxRangeHz, produceLogFbank, produceFirstDerivative, produceSecondDerivative):
         self.wavPath = wavPath
-        self.rateHz = rateHz
         self.samples = samples
+        self.rateHz = rateHz
+        self.instrumentTag = instrumentTag
+        self.tags = tags
         self.producedLogFbank = produceLogFbank
 
         # TODO: Look for python_speech_features package >0.6 containing
@@ -88,6 +90,8 @@ class MfccWav:
             # Nx12xM
             self.fullFeatureArray = numpy.stack(toStack, axis=-1)
 
+        self.numMfccRows = numpy.shape(self.fullFeatureArray)[0]
+
     def writeFullFeatureArrayToCsvStream(self, outStream):
         twoDMatrix = self.fullFeatureArray[:,:,0]
         numpy.savetxt(sys.stdout, twoDMatrix, delimiter=',', header=self.csvHeader, comments='')
@@ -107,13 +111,13 @@ class MfccWavLoader:
         self.produceFirstDerivative = produceFirstDerivative
         self.produceSecondDerivative = produceSecondDerivative
 
-    def generateMfccs(self):
+    def generateMfccs(self, instrumentTag, tags):
         # Convert the WAV file into monaural samples in a NumPy array.
         (rateHz, samples) = wav.read(self.wavPath)
-        print("Loaded", self.wavPath, rateHz, "Hz")
+        #print("Loaded", self.wavPath, rateHz, "Hz")
 
         # Yield the full set of samples as the first output.
-        lastWav = MfccWav(self.wavPath, samples, rateHz, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
+        lastWav = MfccWav(self.wavPath, samples, rateHz, instrumentTag, tags, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
         yield lastWav
 
         # Generate subsets from special filename formats.
@@ -132,7 +136,7 @@ class MfccWavLoader:
             beginSample = beginTimeCode * rateHz
             currentEndSample = samples.shape[0] - samplesPerStep  # Full array was emitted above.
             while currentEndSample >= beginSample:
-                nextWav = MfccWav(self.wavPath, samples[0:int(currentEndSample)], rateHz, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
+                nextWav = MfccWav(self.wavPath, samples[0:int(currentEndSample)], rateHz, instrumentTag, tags, self.mfccMaxRangeHz, self.produceLogFbank, self.produceFirstDerivative, self.produceSecondDerivative)
                 if numpy.array_equal(nextWav.mfccFeatures, lastWav.mfccFeatures):  # Depending on alignments we could generate the same MFCCs
                     print('Dropped part of', fileName, 'as being equal to previous in MFCCs')
                 else:

@@ -2,6 +2,7 @@ import json
 from InstrumentLoader import InstrumentLoader
 import keras.models
 from KerasTensorFlowAnalyzer import KerasTensorFlowAnalyzer
+import MfccComparisonAnalyzer
 import os
 from SoundStreamAnalyzer import SoundStreamAnalyzer
 import sys
@@ -23,7 +24,7 @@ trainedModel = keras.models.load_model(modelFilePath)
 f = open(modelParamsPath)
 modelParams = json.load(f)
 
-analyzers = [ KerasTensorFlowAnalyzer(trainedModel, modelParams)  ]
+analyzers = [ KerasTensorFlowAnalyzer(trainedModel, modelParams) ] + list(MfccComparisonAnalyzer.constructFromInstruments(instruments))
 
-analyzer = SoundStreamAnalyzer(wavFilePath, instruments, analyzers, 0.8)
+analyzer = SoundStreamAnalyzer(wavFilePath, instruments, analyzers, 0.9)
 analyzer.getMatches()

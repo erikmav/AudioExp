@@ -17,6 +17,7 @@ class InstrumentLoader:
     while calculating MFCCs.
     """
 
+    allInstrumentMfccWavs = []
     allInstrumentMfccData = []
     allInstrumentLabels = []
     mfccLenToSamplesMap = {}
@@ -36,16 +37,15 @@ class InstrumentLoader:
             fullGlob = os.path.join(soundTagJsonReader.folderPath, soundData["SoundRelativePath"])
             for soundPath in glob.glob(fullGlob):
                 mfccLoader = MfccWavLoader(soundPath, mfccMaxRangeHz)
-                for mfccWav in mfccLoader.generateMfccs():
-                    mfccLayers = mfccWav.fullFeatureArray
-                    shape = numpy.shape(mfccLayers)
-                    numMfccRows = shape[0]
+                for mfccWav in mfccLoader.generateMfccs(instrumentTag, allTags):
+                    numMfccRows = mfccWav.numMfccRows
                     # print(soundPath, "shape", shape)
                     self.maxMfccRows = max(self.maxMfccRows, numMfccRows)
                     self.minMfccRows = min(self.minMfccRows, numMfccRows)
                     self.minWavHz = min(self.minWavHz, mfccWav.rateHz)
 
-                    self.allInstrumentMfccData.append(mfccLayers)
+                    self.allInstrumentMfccWavs.append(mfccWav)
+                    self.allInstrumentMfccData.append(mfccWav.fullFeatureArray)
                     self.allInstrumentLabels.append(allTags)
 
                     sampleList = self.mfccLenToSamplesMap.get(numMfccRows)

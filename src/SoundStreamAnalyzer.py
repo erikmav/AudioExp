@@ -34,7 +34,7 @@ class SoundStreamAnalyzer:
         # Implies refactoring to allow streaming windows of max needed length into various
         # detection algos.
         mfccLoader = MfccWavLoader(wavFilePath)
-        self.mfccs = mfccLoader.generateMfccs().send(None).fullFeatureArray
+        self.mfccs = mfccLoader.generateMfccs('analysis-stream', []).send(None).fullFeatureArray
         shape = numpy.shape(self.mfccs)
         print("Loaded", wavFilePath, "producing", shape[0], "rows; full shape", shape)
 
@@ -52,6 +52,9 @@ class SoundStreamAnalyzer:
         print("numWindows", numWindows, shape)
 
         for currentRow in range(numWindows):
+            #if (1 + int(currentRow % 10) == 0):
+            print("Row", currentRow)
+
             for numMfccRows, analyzers in self.analyzersByLen.items():
                 if (currentRow + numMfccRows) >= shape[0]:
                     # Analyzers need more samples than we have remaining in the tail.
@@ -65,7 +68,9 @@ class SoundStreamAnalyzer:
                 analysisArray = analysisArray[numpy.newaxis, ...]
 
                 for analyzer in analyzers:
+                    # Predictions shape (1, numInstruments)
                     predictions = analyzer.analyze(analysisArray)
                     for i in range(predictions.shape[1]):
                         if predictions[0][i] >= self.minDetectionCertainty:
                             print("Found", labels[i], "at offset", windowStepLengthSec * currentRow, " sec (MFCC row", currentRow, "), from analyzer", analyzer.name())
+
